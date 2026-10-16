@@ -1,0 +1,826 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  ArrowLeft,
+     7→  ArrowRight,
+     8→  Check,
+     9→  Clock,
+    10→  Loader2,
+    11→  MapPin,
+    12→  Minus,
+    13→  Phone,
+    14→  Plus,
+    15→  ShoppingBag,
+    16→  Store,
+    17→  Trash2,
+    18→  Wallet,
+    19→} from "lucide-react";
+    20→import { toast } from "sonner";
+    21→import { menu } from "@/content/menu";
+    22→import { siteConfig } from "@/content/site";
+    23→import { trackEvent } from "@/lib/track";
+    24→import { cartSubtotal, formatTk, useCart, type CartLine } from "@/lib/cart-store";
+    25→import { ProductCard } from "@/components/order/product-card";
+    26→import { Button } from "@/components/ui/button";
+    27→import { Input } from "@/components/ui/input";
+    28→import { Textarea } from "@/components/ui/textarea";
+    29→import { Label } from "@/components/ui/label";
+    30→import { cn } from "@/lib/utils";
+    31→
+    32→const pickupOptions = [
+    33→  "ASAP (about 15-25 min)",
+    34→  "In 30 minutes",
+    35→  "In 1 hour",
+    36→  "Tonight, around 7 PM",
+    37→  "Tonight, around 8 PM",
+    38→  "Tonight, around 9 PM",
+    39→] as const;
+    40→
+    41→interface OrderSuccess {
+    42→  orderNumber: string;
+    43→  total: number;
+    44→  whatsappUrl: string;
+    45→  lines: CartLine[];
+    46→  name: string;
+    47→}
+    48→
+    49→const phoneRegex = /^(?:\+?880|0)1[3-9]\d{8}$/;
+    50→
+    51→function validatePhone(value: string): boolean {
+    52→  return phoneRegex.test(value.replace(/[\s-]/g, ""));
+    53→}
+    54→
+    55→type Step = 1 | 2;
+    56→
+    57→/* ------------------------------- Step header ------------------------------ */
+    58→
+    59→function CheckoutSteps({ step, done = false }: { step: Step; done?: boolean }) {
+    60→  const steps = [
+    61→    { n: 1, label: "Your items" },
+    62→    { n: 2, label: "Checkout" },
+    63→    { n: 3, label: "Confirmed" },
+    64→  ];
+    65→  const current = done ? 3 : step;
+    66→  return (
+    67→    <ol className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm font-medium" aria-label="Checkout progress">
+    68→      {steps.map((s, i) => {
+    69→        const isDone = current > s.n;
+    70→        const isCurrent = current === s.n;
+    71→        return (
+    72→          <li key={s.n} className="flex items-center gap-2">
+    73→            <span
+    74→              className={cn(
+    75→                "flex h-7 w-7 items-center justify-center rounded-full border-2 font-display text-xs font-bold",
+    76→                isDone
+    77→                  ? "border-lime bg-lime text-ink"
+    78→                  : isCurrent
+    79→                    ? "border-ink bg-ink text-cream"
+    80→                    : "border-ink/25 bg-white text-muted-warm"
+    81→              )}
+    82→              aria-current={isCurrent ? "step" : undefined}
+    83→            >
+    84→              {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} aria-hidden /> : s.n}
+    85→            </span>
+    86→            <span className={cn(isCurrent ? "text-ink" : "text-muted-warm")}>{s.label}</span>
+    87→            {i < steps.length - 1 && (
+    88→              <span aria-hidden className="ml-1 text-ink/25">
+    89→                →
+    90→              </span>
+    91→            )}
+    92→          </li>
+    93→        );
+    94→      })}
+    95→    </ol>
+    96→  );
+    97→}
+    98→
+    99→/* ------------------------------- Cart lines ------------------------------- */
+   100→
+   101→function CartLineRow({
+   102→  line,
+   103→  onInc,
+   104→  onDec,
+   105→  onRemove,
+   106→  compact = false,
+   107→}: {
+   108→  line: CartLine;
+   109→  onInc: (id: string) => void;
+   110→  onDec: (id: string) => void;
+   111→  onRemove: (id: string) => void;
+   112→  compact?: boolean;
+   113→}) {
+   114→  return (
+   115→    <li className="flex items-center gap-2.5 rounded-xl border-2 border-ink/10 bg-cream p-2.5">
+   116→      <div className="min-w-0 flex-1">
+   117→        <p className="truncate text-sm font-bold text-ink">{line.name}</p>
+   118→        <p className="text-xs font-medium text-muted-warm tabular-nums">
+   119→          {formatTk(line.price)} each
+   120→        </p>
+   121→      </div>
+   122→      <div className="flex items-center overflow-hidden rounded-full border-2 border-ink bg-white">
+   123→        <button
+   124→          type="button"
+   125→          onClick={() => onDec(line.id)}
+   126→          className="flex h-8 w-8 items-center justify-center text-ink transition-colors hover:bg-pink hover:text-white"
+   127→          aria-label={`Remove one ${line.name}`}
+   128→        >
+   129→          <Minus className="h-3.5 w-3.5" aria-hidden />
+   130→        </button>
+   131→        <span className="min-w-7 text-center text-sm font-bold tabular-nums">{line.qty}</span>
+   132→        <button
+   133→          type="button"
+   134→          onClick={() => onInc(line.id)}
+   135→          className="flex h-8 w-8 items-center justify-center text-ink transition-colors hover:bg-lime"
+   136→          aria-label={`Add one more ${line.name}`}
+   137→        >
+   138→          <Plus className="h-3.5 w-3.5" aria-hidden />
+   139→        </button>
+   140→      </div>
+   141→      <p className={cn("font-bold tabular-nums", compact ? "w-14 text-right text-sm" : "w-16 text-right text-sm")}>
+   142→        {formatTk(line.price * line.qty)}
+   143→      </p>
+   144→      <button
+   145→        type="button"
+   146→        onClick={() => onRemove(line.id)}
+   147→        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-red-50 hover:text-red-600"
+   148→        aria-label={`Remove ${line.name} from order`}
+   149→      >
+   150→        <Trash2 className="h-4 w-4" aria-hidden />
+   151→      </button>
+   152→    </li>
+   153→  );
+   154→}
+   155→
+   156→/* ------------------------------ Main component ---------------------------- */
+   157→
+   158→export function OrderPageContent() {
+   159→  const lines = useCart((s) => s.lines);
+   160→  const increment = useCart((s) => s.increment);
+   161→  const decrement = useCart((s) => s.decrement);
+   162→  const remove = useCart((s) => s.remove);
+   163→  const clear = useCart((s) => s.clear);
+   164→
+   165→  const [step, setStep] = React.useState<Step>(1);
+   166→  const [activeCat, setActiveCat] = React.useState(menu[0].id);
+   167→  const [name, setName] = React.useState("");
+   168→  const [phone, setPhone] = React.useState("");
+   169→  const [pickupTime, setPickupTime] = React.useState<string>(pickupOptions[0]);
+   170→  const [notes, setNotes] = React.useState("");
+   171→  const [submitting, setSubmitting] = React.useState(false);
+   172→  const [success, setSuccess] = React.useState<OrderSuccess | null>(null);
+   173→  const [touched, setTouched] = React.useState<{ name?: boolean; phone?: boolean }>({});
+   174→
+   175→  const subtotal = cartSubtotal(lines);
+   176→  const itemCount = lines.reduce((n, l) => n + l.qty, 0);
+   177→  const nameValid = name.trim().length >= 2;
+   178→  const phoneValid = validatePhone(phone);
+   179→  const canSubmit = lines.length > 0 && nameValid && phoneValid && !submitting;
+   180→
+   181→  const category = menu.find((c) => c.id === activeCat) ?? menu[0];
+   182→
+   183→  function goToStep(next: Step) {
+   184→    setStep(next);
+   185→    window.scrollTo({ top: 0, behavior: "smooth" });
+   186→  }
+   187→
+   188→  async function placeOrder() {
+   189→    setTouched({ name: true, phone: true });
+   190→    if (!canSubmit) {
+   191→      if (lines.length === 0) toast.error("Add at least one item to your order first.");
+   192→      else if (!nameValid) toast.error("Please tell us your name.");
+   193→      else if (!phoneValid) toast.error("Please enter a valid Bangladeshi phone number.");
+   194→      return;
+   195→    }
+   196→    setSubmitting(true);
+   197→    try {
+   198→      const res = await fetch("/api/orders", {
+   199→        method: "POST",
+   200→        headers: { "Content-Type": "application/json" },
+   201→        body: JSON.stringify({
+   202→          customerName: name.trim(),
+   203→          phone: phone.trim(),
+   204→          pickupTime,
+   205→          notes: notes.trim() || undefined,
+   206→          items: lines.map((l) => ({ id: l.id, qty: l.qty })),
+   207→        }),
+   208→      });
+   209→      const data = await res.json();
+   210→      if (!res.ok || !data.success) {
+   211→        throw new Error(data.error || "Could not place the order.");
+   212→      }
+   213→      setSuccess({
+   214→        orderNumber: data.orderNumber,
+   215→        total: data.total,
+   216→        whatsappUrl: data.whatsappUrl,
+   217→        lines,
+   218→        name: name.trim(),
+   219→      });
+   220→      clear();
+   221→      window.scrollTo({ top: 0, behavior: "smooth" });
+   222→    } catch (err) {
+   223→      toast.error(err instanceof Error ? err.message : "Could not place the order. Please try again.");
+   224→    } finally {
+   225→      setSubmitting(false);
+   226→    }
+   227→  }
+   228→
+   229→  /* ------------------------------ SUCCESS VIEW ----------------------------- */
+   230→  if (success) {
+   231→    return (
+   232→      <div className="mx-auto max-w-2xl px-4 pb-24 pt-24 sm:px-6 md:pt-28">
+   233→        <div className="mb-6">
+   234→          <CheckoutSteps step={2} done />
+   235→        </div>
+   236→        <motion.div
+   237→          initial={{ opacity: 0, y: 20 }}
+   238→          animate={{ opacity: 1, y: 0 }}
+   239→          className="rounded-3xl border-[3px] border-ink bg-white p-6 text-center shadow-[8px_8px_0_0_var(--color-ink)] sm:p-10"
+   240→        >
+   241→          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-ink bg-lime shadow-[3px_3px_0_0_var(--color-ink)]">
+   242→            <Check className="h-8 w-8 text-ink" strokeWidth={3} aria-hidden />
+   243→          </span>
+   244→          <h1 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+   245→            Order placed!
+   246→          </h1>
+   247→          <p className="mt-2 text-muted-warm">
+   248→            Thanks {success.name.split(" ")[0]}. Your order number is{" "}
+   249→            <span className="font-display font-bold text-pink">{success.orderNumber}</span>,
+   250→            total {formatTk(success.total)}.
+   251→          </p>
+   252→
+   253→          {/* Item recap */}
+   254→          <ul className="mt-6 space-y-2 rounded-2xl border-2 border-dashed border-ink/25 bg-cream p-4 text-left">
+   255→            {success.lines.map((l) => (
+   256→              <li key={l.id} className="flex items-center justify-between gap-3 text-sm">
+   257→                <span className="font-semibold text-ink">
+   258→                  {l.qty} × {l.name}
+   259→                </span>
+   260→                <span className="font-bold tabular-nums text-ink/80">{formatTk(l.price * l.qty)}</span>
+   261→              </li>
+   262→            ))}
+   263→            <li className="flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-2 text-sm">
+   264→              <span className="font-bold text-ink">Total (pay at pickup)</span>
+   265→              <span className="font-display font-bold tabular-nums text-pink">
+   266→                {formatTk(success.total)}
+   267→              </span>
+   268→            </li>
+   269→          </ul>
+   270→
+   271→          <div className="mt-5 rounded-2xl border-2 border-dashed border-ink/30 bg-cream p-4 text-left">
+   272→            <p className="flex items-start gap-2 text-sm font-semibold text-ink">
+   273→              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-orange" aria-hidden />
+   274→              One last step: tap the WhatsApp button below so the shop receives your
+   275→              order instantly. You can also call us to confirm.
+   276→            </p>
+   277→          </div>
+   278→
+   279→          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+   280→            <Button
+   281→              asChild
+   282→              className="min-h-12 rounded-full bg-[#25D366] px-7 text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+   283→            >
+   284→              <a href={success.whatsappUrl} target="_blank" rel="noopener noreferrer">
+   285→                Send order on WhatsApp
+   286→              </a>
+   287→            </Button>
+   288→            <Button
+   289→              asChild
+   290→              variant="outline"
+   291→              className="min-h-12 rounded-full border-2 border-ink bg-white px-7 text-base font-semibold text-ink"
+   292→            >
+   293→              <a href={`tel:${siteConfig.phoneE164}`} onClick={() => trackEvent("phone_click")}>
+   294→                <Phone className="mr-1 h-4 w-4" aria-hidden />
+   295→                Call the shop
+   296→              </a>
+   297→            </Button>
+   298→          </div>
+   299→
+   300→          <button
+   301→            type="button"
+   302→            onClick={() => {
+   303→              setSuccess(null);
+   304→              setStep(1);
+   305→              setName("");
+   306→              setPhone("");
+   307→              setNotes("");
+   308→              setTouched({});
+   309→            }}
+   310→            className="mt-6 text-sm font-semibold text-pink underline-offset-4 hover:underline"
+   311→          >
+   312→            Start a new order
+   313→          </button>
+   314→        </motion.div>
+   315→      </div>
+   316→    );
+   317→  }
+   318→
+   319→  /* ------------------------------- STEP 2: CHECKOUT ------------------------ */
+   320→  if (step === 2) {
+   321→    return (
+   322→      <div className="mx-auto max-w-6xl px-4 pb-32 pt-24 sm:px-6 md:pb-24 md:pt-28">
+   323→        {/* Compact header */}
+   324→        <div className="flex flex-wrap items-center justify-between gap-3">
+   325→          <div>
+   326→            <button
+   327→              type="button"
+   328→              onClick={() => goToStep(1)}
+   329→              className="mb-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-muted-warm transition-colors hover:bg-white hover:text-ink"
+   330→            >
+   331→              <ArrowLeft className="h-4 w-4" aria-hidden />
+   332→              Back to items
+   333→            </button>
+   334→            <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+   335→              Checkout
+   336→            </h1>
+   337→          </div>
+   338→          <CheckoutSteps step={2} />
+   339→        </div>
+   340→
+   341→        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-8">
+   342→          {/* Details form */}
+   343→          <div className="space-y-6">
+   344→            <section
+   345→              aria-labelledby="details-heading"
+   346→              className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
+   347→            >
+   348→              <h2 id="details-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+   349→                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pink font-display text-xs font-bold text-white">
+   350→                  1
+   351→                </span>
+   352→                Your details
+   353→              </h2>
+   354→              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+   355→                <div>
+   356→                  <Label htmlFor="order-name" className="text-sm font-semibold">
+   357→                    Name
+   358→                  </Label>
+   359→                  <Input
+   360→                    id="order-name"
+   361→                    value={name}
+   362→                    onChange={(e) => setName(e.target.value)}
+   363→                    onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+   364→                    placeholder="e.g. Rahim Ahmed"
+   365→                    autoComplete="name"
+   366→                    maxLength={60}
+   367→                    required
+   368→                    aria-invalid={touched.name && !nameValid}
+   369→                    className="mt-1.5 h-12 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   370→                  />
+   371→                  {touched.name && !nameValid && (
+   372→                    <p className="mt-1 text-xs font-medium text-red-600">
+   373→                      Please enter your name (at least 2 characters).
+   374→                    </p>
+   375→                  )}
+   376→                </div>
+   377→                <div>
+   378→                  <Label htmlFor="order-phone" className="text-sm font-semibold">
+   379→                    Phone number
+   380→                  </Label>
+   381→                  <Input
+   382→                    id="order-phone"
+   383→                    type="tel"
+   384→                    inputMode="tel"
+   385→                    value={phone}
+   386→                    onChange={(e) => setPhone(e.target.value)}
+   387→                    onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
+   388→                    placeholder="01XXXXXXXXX"
+   389→                    autoComplete="tel"
+   390→                    maxLength={16}
+   391→                    required
+   392→                    aria-invalid={touched.phone && !phoneValid}
+   393→                    className="mt-1.5 h-12 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   394→                  />
+   395→                  {touched.phone && !phoneValid && (
+   396→                    <p className="mt-1 text-xs font-medium text-red-600">
+   397→                      Enter a valid BD number, e.g. 01723399638.
+   398→                    </p>
+   399→                  )}
+   400→                </div>
+   401→              </div>
+   402→            </section>
+   403→
+   404→            <section
+   405→              aria-labelledby="pickup-heading"
+   406→              className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
+   407→            >
+   408→              <h2 id="pickup-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+   409→                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan font-display text-xs font-bold text-ink">
+   410→                  2
+   411→                </span>
+   412→                Pickup
+   413→              </h2>
+   414→              <div className="mt-4 grid gap-4">
+   415→                <div>
+   416→                  <Label htmlFor="order-pickup" className="text-sm font-semibold">
+   417→                    Pickup time
+   418→                  </Label>
+   419→                  <select
+   420→                    id="order-pickup"
+   421→                    value={pickupTime}
+   422→                    onChange={(e) => setPickupTime(e.target.value)}
+   423→                    className="mt-1.5 h-12 w-full rounded-xl border-2 border-ink/25 bg-cream px-3 text-sm font-medium text-ink focus:border-pink focus:outline-none"
+   424→                  >
+   425→                    {pickupOptions.map((opt) => (
+   426→                      <option key={opt} value={opt}>
+   427→                        {opt}
+   428→                      </option>
+   429→                    ))}
+   430→                  </select>
+   431→                </div>
+   432→                <div>
+   433→                  <Label htmlFor="order-notes" className="text-sm font-semibold">
+   434→                    Notes <span className="font-normal text-muted-warm">(optional)</span>
+   435→                  </Label>
+   436→                  <Textarea
+   437→                    id="order-notes"
+   438→                    value={notes}
+   439→                    onChange={(e) => setNotes(e.target.value)}
+   440→                    placeholder="Extra Nutella? Less sweet? Tell us here."
+   441→                    maxLength={400}
+   442→                    className="mt-1.5 min-h-20 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   443→                  />
+   444→                </div>
+   445→              </div>
+   446→            </section>
+   447→
+   448→            <section
+   449→              aria-label="How pickup works"
+   450→              className="grid gap-3 rounded-3xl border-2 border-dashed border-ink/25 bg-white/60 p-5 sm:grid-cols-2 sm:p-6"
+   451→            >
+   452→              <div className="flex items-start gap-3">
+   453→                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-lime-soft">
+   454→                  <Store className="h-5 w-5 text-ink" aria-hidden />
+   455→                </span>
+   456→                <div>
+   457→                  <p className="text-sm font-bold">Pickup only</p>
+   458→                  <p className="mt-0.5 text-xs leading-relaxed text-muted-warm">
+   459→                    {siteConfig.address.street}, {siteConfig.address.locality}{" "}
+   460→                    {siteConfig.address.postalCode}
+   461→                  </p>
+   462→                </div>
+   463→              </div>
+   464→              <div className="flex items-start gap-3">
+   465→                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-orange-soft">
+   466→                  <Wallet className="h-5 w-5 text-ink" aria-hidden />
+   467→                </span>
+   468→                <div>
+   469→                  <p className="text-sm font-bold">Pay at the counter</p>
+   470→                  <p className="mt-0.5 text-xs leading-relaxed text-muted-warm">
+   471→                    No advance payment. Cash or mobile wallet when you collect.
+   472→                  </p>
+   473→                </div>
+   474→              </div>
+   475→            </section>
+   476→
+   477→            {/* Order summary (mobile / tablet) */}
+   478→            <section
+   479→              aria-labelledby="summary-heading-mobile"
+   480→              className="rounded-3xl border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)] lg:hidden"
+   481→            >
+   482→              <h2 id="summary-heading-mobile" className="flex items-center gap-2 font-display text-lg font-bold">
+   483→                <ShoppingBag className="h-5 w-5 text-pink" aria-hidden />
+   484→                Order summary
+   485→                {itemCount > 0 && (
+   486→                  <span className="rounded-full bg-pink px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+   487→                    {itemCount}
+   488→                  </span>
+   489→                )}
+   490→              </h2>
+   491→              {lines.length === 0 ? (
+   492→                <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 p-6 text-center">
+   493→                  <p className="text-sm font-medium text-muted-warm">
+   494→                    Your order is empty.{" "}
+   495→                    <button
+   496→                      type="button"
+   497→                      onClick={() => goToStep(1)}
+   498→                      className="font-bold text-pink underline-offset-2 hover:underline"
+   499→                    >
+   500→                      Add some treats
+   501→                    </button>
+   502→                  </p>
+   503→                </div>
+   504→              ) : (
+   505→                <>
+   506→                  <ul className="mt-4 max-h-80 space-y-2.5 overflow-y-auto pr-1 nice-scrollbar">
+   507→                    {lines.map((line) => (
+   508→                      <CartLineRow
+   509→                        key={line.id}
+   510→                        line={line}
+   511→                        onInc={increment}
+   512→                        onDec={decrement}
+   513→                        onRemove={remove}
+   514→                        compact
+   515→                      />
+   516→                    ))}
+   517→                  </ul>
+   518→                  <div className="mt-4 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
+   519→                    <span className="text-sm font-semibold text-muted-warm">Total</span>
+   520→                    <span className="font-display text-2xl font-bold tabular-nums">
+   521→                      {formatTk(subtotal)}
+   522→                    </span>
+   523→                  </div>
+   524→                  <Button
+   525→                    onClick={placeOrder}
+   526→                    disabled={submitting || lines.length === 0}
+   527→                    className="mt-4 h-14 w-full rounded-2xl bg-orange text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:pointer-events-none disabled:opacity-50"
+   528→                  >
+   529→                    {submitting ? (
+   530→                      <>
+   531→                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+   532→                        Placing order...
+   533→                      </>
+   534→                    ) : (
+   535→                      <>
+   536→                        Place order
+   537→                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+   538→                      </>
+   539→                    )}
+   540→                  </Button>
+   541→                </>
+   542→              )}
+   543→            </section>
+   544→          </div>
+   545→
+   546→          {/* Order summary (desktop) */}
+   547→          <aside aria-label="Order summary" className="hidden lg:block">
+   548→            <div className="sticky top-24 rounded-3xl border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)]">
+   549→              <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+   550→                <ShoppingBag className="h-5 w-5 text-pink" aria-hidden />
+   551→                Order summary
+   552→                {itemCount > 0 && (
+   553→                  <span className="rounded-full bg-pink px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+   554→                    {itemCount}
+   555→                  </span>
+   556→                )}
+   557→              </h2>
+   558→              {lines.length === 0 ? (
+   559→                <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 p-6 text-center">
+   560→                  <p className="text-sm font-medium text-muted-warm">
+   561→                    Your order is empty.{" "}
+   562→                    <button
+   563→                      type="button"
+   564→                      onClick={() => goToStep(1)}
+   565→                      className="font-bold text-pink underline-offset-2 hover:underline"
+   566→                    >
+   567→                      Add some treats
+   568→                    </button>
+   569→                  </p>
+   570→                </div>
+   571→              ) : (
+   572→                <>
+   573→                  <ul className="mt-4 max-h-96 space-y-2.5 overflow-y-auto pr-1 nice-scrollbar">
+   574→                    {lines.map((line) => (
+   575→                      <CartLineRow
+   576→                        key={line.id}
+   577→                        line={line}
+   578→                        onInc={increment}
+   579→                        onDec={decrement}
+   580→                        onRemove={remove}
+   581→                      />
+   582→                    ))}
+   583→                  </ul>
+   584→                  <div className="mt-4 space-y-1.5 border-t-2 border-dashed border-ink/20 pt-3 text-sm">
+   585→                    <div className="flex items-center justify-between text-muted-warm">
+   586→                      <span>Items</span>
+   587→                      <span className="tabular-nums">{itemCount}</span>
+   588→                    </div>
+   589→                    <div className="flex items-center justify-between">
+   590→                      <span className="font-semibold">Total (pay at pickup)</span>
+   591→                      <span className="font-display text-2xl font-bold tabular-nums">
+   592→                        {formatTk(subtotal)}
+   593→                      </span>
+   594→                    </div>
+   595→                  </div>
+   596→                  <Button
+   597→                    onClick={placeOrder}
+   598→                    disabled={submitting || lines.length === 0}
+   599→                    className="mt-4 h-14 w-full rounded-2xl bg-orange text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:pointer-events-none disabled:opacity-50"
+   600→                  >
+   601→                    {submitting ? (
+   602→                      <>
+   603→                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+   604→                        Placing order...
+   605→                      </>
+   606→                    ) : (
+   607→                      <>
+   608→                        Place order
+   609→                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+   610→                      </>
+   611→                    )}
+   612→                  </Button>
+   613→                  <p className="mt-3 text-center text-xs leading-relaxed text-muted-warm">
+   614→                    After placing, we hand your order to the shop over WhatsApp so
+   615→                    nothing gets lost.
+   616→                  </p>
+   617→                </>
+   618→              )}
+   619→            </div>
+   620→          </aside>
+   621→        </div>
+   622→      </div>
+   623→    );
+   624→  }
+   625→
+   626→  /* ------------------------------- STEP 1: BROWSE -------------------------- */
+   627→  return (
+   628→    <div className="mx-auto max-w-6xl px-4 pb-36 pt-24 sm:px-6 md:pb-28 md:pt-28 lg:pb-20">
+   629→      {/* Compact header */}
+   630→      <div className="flex flex-wrap items-center justify-between gap-3">
+   631→        <div>
+   632→          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+   633→            Build your order
+   634→          </h1>
+   635→          <p className="mt-1.5 text-sm text-muted-warm sm:text-base">
+   636→            Pick your treats, then checkout. Pay at pickup, ready in 15-25 min.
+   637→          </p>
+   638→        </div>
+   639→        <CheckoutSteps step={1} />
+   640→      </div>
+   641→
+   642→      {/* Trust strip */}
+   643→      <div className="mt-5 flex flex-wrap gap-2.5">
+   644→        {[
+   645→          { icon: Clock, label: "Ready in 15-25 min" },
+   646→          { icon: Wallet, label: "Pay at pickup" },
+   647→          { icon: MapPin, label: "Pickup from Radhanagar Road" },
+   648→        ].map(({ icon: Icon, label }) => (
+   649→          <span
+   650→            key={label}
+   651→            className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white px-3.5 py-1.5 text-xs font-bold text-ink"
+   652→          >
+   653→            <Icon className="h-3.5 w-3.5 text-pink" aria-hidden />
+   654→            {label}
+   655→          </span>
+   656→        ))}
+   657→      </div>
+   658→
+   659→      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
+   660→        {/* Menu browser */}
+   661→        <section aria-label="Menu items" className="min-w-0">
+   662→          <div
+   663→            role="tablist"
+   664→            aria-label="Menu categories"
+   665→            className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+   666→          >
+   667→            {menu.map((cat) => (
+   668→              <button
+   669→                key={cat.id}
+   670→                role="tab"
+   671→                aria-selected={activeCat === cat.id}
+   672→                onClick={() => setActiveCat(cat.id)}
+   673→                className={cn(
+   674→                  "min-h-11 whitespace-nowrap rounded-full border-2 px-4 text-sm font-bold transition-all",
+   675→                  activeCat === cat.id
+   676→                    ? "border-ink bg-ink text-cream shadow-[2.5px_2.5px_0_0_rgba(32,23,25,0.25)]"
+   677→                    : "border-ink/20 bg-white text-ink hover:border-ink"
+   678→                )}
+   679→              >
+   680→                {cat.label}
+   681→                <span className="ml-2 rounded-full bg-ink/10 px-1.5 py-0.5 text-[0.65rem] tabular-nums">
+   682→                  {cat.items.length}
+   683→                </span>
+   684→              </button>
+   685→            ))}
+   686→          </div>
+   687→
+   688→          <AnimatePresence mode="wait">
+   689→            <motion.ul
+   690→              key={category.id}
+   691→              initial={{ opacity: 0, y: 8 }}
+   692→              animate={{ opacity: 1, y: 0 }}
+   693→              exit={{ opacity: 0, y: -8 }}
+   694→              transition={{ duration: 0.2 }}
+   695→              className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3"
+   696→              aria-live="polite"
+   697→            >
+   698→              {category.items.map((item, i) => (
+   699→                <motion.li
+   700→                  key={item.id}
+   701→                  initial={{ opacity: 0, y: 10 }}
+   702→                  animate={{ opacity: 1, y: 0 }}
+   703→                  transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.3) }}
+   704→                >
+   705→                  <ProductCard
+   706→                    item={item}
+   707→                    category={category.label}
+   708→                    className="h-full"
+   709→                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 46vw, 30vw"
+   710→                    priority={i < 4}
+   711→                  />
+   712→                </motion.li>
+   713→              ))}
+   714→            </motion.ul>
+   715→          </AnimatePresence>
+   716→        </section>
+   717→
+   718→        {/* Cart (desktop) */}
+   719→        <aside aria-label="Your order" className="hidden lg:block">
+   720→          <div className="sticky top-24 rounded-3xl border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)]">
+   721→            <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+   722→              <ShoppingBag className="h-5 w-5 text-pink" aria-hidden />
+   723→              Your order
+   724→              {itemCount > 0 && (
+   725→                <span className="rounded-full bg-pink px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+   726→                  {itemCount}
+   727→                </span>
+   728→              )}
+   729→            </h2>
+   730→
+   731→            {lines.length === 0 ? (
+   732→              <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 p-6 text-center">
+   733→                <p className="text-sm font-medium text-muted-warm">
+   734→                  Nothing here yet. Tap Add on anything that looks tasty.
+   735→                </p>
+   736→              </div>
+   737→            ) : (
+   738→              <>
+   739→                <ul className="mt-4 max-h-96 space-y-2.5 overflow-y-auto pr-1 nice-scrollbar">
+   740→                  {lines.map((line) => (
+   741→                    <CartLineRow
+   742→                      key={line.id}
+   743→                      line={line}
+   744→                      onInc={increment}
+   745→                      onDec={decrement}
+   746→                      onRemove={remove}
+   747→                    />
+   748→                  ))}
+   749→                </ul>
+   750→                <div className="mt-4 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
+   751→                  <span className="text-sm font-semibold text-muted-warm">Subtotal</span>
+   752→                  <span className="font-display text-2xl font-bold tabular-nums">
+   753→                    {formatTk(subtotal)}
+   754→                  </span>
+   755→                </div>
+   756→              </>
+   757→            )}
+   758→
+   759→            <Button
+   760→              onClick={() => {
+   761→                if (lines.length === 0) {
+   762→                  toast.error("Add at least one item to your order first.");
+   763→                  return;
+   764→                }
+   765→                goToStep(2);
+   766→              }}
+   767→              className="mt-4 h-13 min-h-12 w-full rounded-2xl bg-orange text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+   768→            >
+   769→              Go to checkout
+   770→              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+   771→            </Button>
+   772→            <p className="mt-3 text-center text-xs leading-relaxed text-muted-warm">
+   773→              Prefer talking? Call{" "}
+   774→              <a
+   775→                href={`tel:${siteConfig.phoneE164}`}
+   776→                onClick={() => trackEvent("phone_click")}
+   777→                className="font-bold text-pink underline-offset-2 hover:underline"
+   778→              >
+   779→                {siteConfig.phoneDisplay}
+   780→              </a>
+   781→            </p>
+   782→          </div>
+   783→        </aside>
+   784→      </div>
+   785→
+   786→      {/* Sticky cart bar (mobile + tablet, sits above the site action bar) */}
+   787→      <AnimatePresence>
+   788→        {lines.length > 0 && (
+   789→          <motion.div
+   790→            initial={{ y: 80, opacity: 0 }}
+   791→            animate={{ y: 0, opacity: 1 }}
+   792→            exit={{ y: 80, opacity: 0 }}
+   793→            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+   794→            className="fixed inset-x-0 bottom-[calc(3.75rem_+_env(safe-area-inset-bottom))] z-40 px-4 md:bottom-[env(safe-area-inset-bottom)] lg:hidden"
+   795→          >
+   796→            <button
+   797→              type="button"
+   798→              onClick={() => goToStep(2)}
+   799→              className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 rounded-2xl border-[3px] border-ink bg-ink px-5 py-3.5 text-cream shadow-[4px_4px_0_0_rgba(32,23,25,0.3)] transition-transform active:scale-[0.98]"
+   800→            >
+   801→              <span className="flex items-center gap-2.5">
+   802→                <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-pink text-white">
+   803→                  <ShoppingBag className="h-4.5 w-4.5" aria-hidden />
+   804→                  <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-ink bg-lime px-1 text-[0.6rem] font-bold text-ink tabular-nums">
+   805→                    {itemCount}
+   806→                  </span>
+   807→                </span>
+   808→                <span className="text-left">
+   809→                  <span className="block text-xs font-medium text-cream/70">Your order</span>
+   810→                  <span className="block font-display text-base font-bold tabular-nums">
+   811→                    {formatTk(subtotal)}
+   812→                  </span>
+   813→                </span>
+   814→              </span>
+   815→              <span className="flex items-center gap-1.5 font-display text-sm font-bold text-lime">
+   816→                Checkout
+   817→                <ArrowRight className="h-4 w-4" aria-hidden />
+   818→              </span>
+   819→            </button>
+   820→          </motion.div>
+   821→        )}
+   822→      </AnimatePresence>
+   823→    </div>
+   824→  );
+   825→}
+   826→

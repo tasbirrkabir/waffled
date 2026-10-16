@@ -17,15 +17,47 @@ const navLinks = [
   { href: "/#visit", label: "Visit Us" },
 ];
 
-function MobileNavDrawer() {
-  const [open, setOpen] = React.useState(false);
+function MobileNavButton({
+  open,
+  onClick,
+}: {
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-label="Open navigation menu"
+      aria-expanded={open}
+      aria-controls="mobile-nav-panel"
+      onClick={onClick}
+      className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-ink text-cream shadow-[2px_2px_0_0_rgba(32,23,25,0.25)]"
+    >
+      <Menu className="h-5 w-5" aria-hidden />
+    </button>
+  );
+}
+
+/**
+ * Overlay renders as a SIBLING of <header>, never inside it.
+ * The header gets `backdrop-blur-md` when scrolled, and any ancestor with
+ * backdrop-filter becomes the containing block for its fixed descendants:
+ * a fixed drawer inside the header would collapse into the header's 64px box
+ * and stop appearing once the page is scrolled. Keeping it outside fixes that.
+ */
+function MobileNavDrawer({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const closeRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -34,24 +66,14 @@ function MobileNavDrawer() {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open, onClose]);
 
   return (
     <>
-      <button
-        aria-label="Open navigation menu"
-        aria-expanded={open}
-        aria-controls="mobile-nav-panel"
-        onClick={() => setOpen(true)}
-        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-ink text-cream shadow-[2px_2px_0_0_rgba(32,23,25,0.25)] lg:hidden"
-      >
-        <Menu className="h-5 w-5" aria-hidden />
-      </button>
-
       {/* Backdrop */}
       <div
         aria-hidden
-        onClick={() => setOpen(false)}
+        onClick={onClose}
         className={cn(
           "fixed inset-0 z-[55] bg-ink/50 backdrop-blur-sm transition-opacity lg:hidden",
           open ? "opacity-100" : "pointer-events-none opacity-0"
@@ -74,7 +96,7 @@ function MobileNavDrawer() {
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white">
               <Image
-                src="/images/logo.png"
+                src="/images/logo-176.webp"
                 alt=""
                 fill
                 sizes="40px"
@@ -91,7 +113,7 @@ function MobileNavDrawer() {
           <button
             ref={closeRef}
             aria-label="Close navigation menu"
-            onClick={() => setOpen(false)}
+            onClick={onClose}
             className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-white text-ink transition-colors hover:bg-pink hover:text-white"
           >
             <X className="h-5 w-5" aria-hidden />
@@ -103,7 +125,7 @@ function MobileNavDrawer() {
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               className="flex items-center justify-between rounded-2xl px-4 py-3.5 font-display text-xl font-semibold text-ink transition-colors hover:bg-white"
             >
               {link.label}
@@ -123,7 +145,7 @@ function MobileNavDrawer() {
               href="/order"
               onClick={() => {
                 trackEvent("menu_click");
-                setOpen(false);
+                onClose();
               }}
             >
               Order Online
@@ -156,6 +178,7 @@ function MobileNavDrawer() {
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = React.useState(false);
+  const [navOpen, setNavOpen] = React.useState(false);
   const [openStatus, setOpenStatus] = React.useState<{
     open: boolean;
     label: string;
@@ -173,6 +196,7 @@ export function SiteHeader() {
   }, []);
 
   return (
+    <>
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-300",
@@ -196,7 +220,7 @@ export function SiteHeader() {
         >
           <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)] md:h-11 md:w-11">
             <Image
-              src="/images/logo.png"
+              src="/images/logo-176.webp"
               alt="Waffled logo, a bold W with a colourful splash pattern"
               fill
               sizes="44px"
@@ -276,9 +300,13 @@ export function SiteHeader() {
           >
             <Phone className="h-5 w-5" aria-hidden />
           </a>
-          <MobileNavDrawer />
+          <MobileNavButton open={navOpen} onClick={() => setNavOpen(true)} />
         </div>
       </div>
     </header>
+    {/* Drawer overlay lives OUTSIDE <header>: the scrolled header has
+        backdrop-blur, which would otherwise trap this fixed panel. */}
+    <MobileNavDrawer open={navOpen} onClose={() => setNavOpen(false)} />
+    </>
   );
 }

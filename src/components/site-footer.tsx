@@ -87,7 +87,7 @@ export function SiteFooter() {
             <div className="flex items-center gap-3">
               <span className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border-2 border-cream/80 bg-cream">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/logo-176.webp"
                   alt="Waffled logo"
                   fill
                   sizes="48px"

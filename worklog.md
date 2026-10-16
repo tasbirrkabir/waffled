@@ -217,3 +217,28 @@ Stage Summary:
 - Build error fixed by eliminating next/font/google: fonts now self-hosted at /public/fonts (2 variable woff2, latin), loaded via plain @font-face in globals.css, variables --font-space-grotesk/--font-inter defined in :root
 - Zero visual change vs before (same Space Grotesk + Inter families and weights); site fully functional again on /, /menu, /order
 - Ops lessons (again): Turbopack can serve PARTIAL stale CSS after rapid sequential edits -> clear .next + restart; dev server must be launched with double-fork setsid "( setsid nohup ./node_modules/.bin/next dev -p 3000 >> dev.log 2>&1 < /dev/null & )"
+
+---
+Task ID: 6
+Agent: main (Z.ai Code)
+Task: Fix side menu drawer (fails when scrolled), fix images not loading, add delivery address + payment TrxID to checkout
+
+Work Log:
+- Analyzed user screenshot (VLM): site in preview panel; drawer footer buttons visible; user reported 4 issues in Banglish
+- ISSUE 1 drawer: ROOT CAUSE = MobileNavDrawer rendered INSIDE <header>; when scrolled>24px the header gets backdrop-blur-md, and backdrop-filter makes the header the containing block for fixed descendants -> the fixed drawer panel (inset-y-0 right-0) collapsed into the header's 64px box and stopped appearing. At page top (no blur) it worked -> exactly the user's symptom
+- FIX: restructured site-header.tsx: state (navOpen) lifted to SiteHeader; MobileNavButton stays inside header; MobileNavDrawer (backdrop+panel) renders as SIBLING after </header> (ancestors = body/html only, no filter). Verified: at scrollY=2000 with header blur(12px) active, panel spans full viewport (844px, top:0), opens/closes, body scroll-lock restored
+- ISSUE 2 images: root cause = /_next/image optimizer queue (logo even requested at w=3840 due to missing sizes; .next cache wipe during font fix made every transform cold). All assets are pre-optimized webp, so switched next.config.ts to images.unoptimized=true (direct static serve, zero optimizer requests); created logo-176.webp (176x157, 12KB, aspect-correct) from logo.png and swapped 3 references (header brand, drawer, footer). Verified: 0 broken images on / (33-34), /menu (30/30), /order; zero /_next/image requests
+- ISSUE 3 delivery address: checkout section 2 rewritten from "Pickup" to "Pickup or delivery": Pickup/Delivery toggle cards; Delivery -> required address Textarea (min 10 chars, house/road/area placeholder) + "Preferred time" select with confirm-on-call note; Pickup -> "Pickup time" + shop address
+- ISSUE 4 payment + TrxID: new section 3 "Payment": Cash (label adapts: Pay at the counter / Pay the rider on delivery) | bKash | Nagad; selecting bKash/Nagad shows send-money box with live total (formatTk) + number from siteConfig.payments + required TrxID input (6-15 alnum, uppercase-normalized, aria-invalid + helper text); live recap card reflects fulfillment + payment choices
+- site.ts: added payments {bkashNumber, nagadNumber} = 01723-399638 (shop's known number; owner should confirm dedicated merchant numbers)
+- prisma Order model: + fulfillment (default pickup), address?, paymentMethod (default cash), trxId? -> db:push; WF-0001/0002 backfilled pickup/cash
+- api/orders: zod schema + superRefine cross-field rules (delivery => address required; bkash/nagad => TrxID required + /^[A-Z0-9]{6,15}$/); trxId transform uppercases; WhatsApp message now includes Type: Pickup/Delivery, Deliver to: address, Payment: bKash/Nagad (TrxID: X) or Cash at counter/Cash on delivery
+- Success view: Deliver to row, Payment row (with "we verify it before starting your order" for mobile money), dynamic Total label (pay on pickup/delivery | paid via bKash/Nagad); restart resets all new fields
+- Step 1 trust chips updated: "Cash, bKash or Nagad" + "Pickup or delivery"; both summary "Total (pay at pickup)" labels simplified to "Total"
+- E2E verified (agent-browser 390x844 + 1440x900): drawer full-height at scrollY=2000 with blur active (VLM confirmed visual); full checkout E2E delivery+bKash+TrxID -> WF-0003 success view (Deliver to + TrxID + paid via bKash), DB row complete, WhatsApp message includes address/payment/TrxID (TrxID 8a5kd2xrq9 -> 8A5KD2XRQ9 uppercase); pickup+cash API path verified; VLM QA of checkout step 2 desktop: all sections present, no visual defects; mobile horizontal scroll still locked; 0 broken images; lint + tsc clean; dev.log clean
+- Cleaned test orders WF-0003/WF-0004. NOTE: WF-0002 (Tasbir Kabir, ৳179, 11:03Z = 17:03 Dhaka) is a REAL customer order placed from the user's phone during testing - kept along with WF-0001
+
+Stage Summary:
+- All 4 user issues fixed: drawer works at any scroll position (backdrop-filter containing-block bug, drawer moved outside header), images load reliably (optimizer bypassed, direct static webp + 12KB logo variant), checkout now asks pickup-or-delivery with required delivery address, payment offers Cash/bKash/Nagad with TrxID verification field
+- Orders DB + WhatsApp handoff now carry fulfillment/address/paymentMethod/trxId; bKash/Nagad numbers live in siteConfig.payments (owner to confirm real merchant numbers)
+- Remaining owner inputs: confirm bKash/Nagad numbers, whether a delivery fee/area limit applies (currently honest "confirmed on call" approach, no invented fees)

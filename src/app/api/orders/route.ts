@@ -16,7 +16,10 @@ const pickupChoices = [
   "Tonight, around 9 PM",
 ] as const;
 
-const orderSchema = z.object({
+const fulfillmentChoices = ["pickup", "delivery"] as const;
+const paymentChoices = ["cash", "bkash", "nagad"] as const;
+
+const baseOrderSchema = z.object({
   customerName: z
     .string()
     .trim()
@@ -29,7 +32,18 @@ const orderSchema = z.object({
     .refine((v) => /^(?:\+?880|0)1[3-9]\d{8}$/.test(v), {
       message: "Please enter a valid Bangladeshi phone number, e.g. 01723399638.",
     }),
+  fulfillment: z.enum(fulfillmentChoices),
+  // Required when fulfillment = "delivery" (checked in superRefine below)
+  address: z.string().trim().max(200, "Address is too long.").optional(),
   pickupTime: z.enum(pickupChoices),
+  paymentMethod: z.enum(paymentChoices),
+  // Required when paymentMethod is bkash/nagad (checked in superRefine below)
+  trxId: z
+    .string()
+    .trim()
+    .max(15)
+    .transform((v) => v.toUpperCase())
+    .optional(),
   notes: z.string().trim().max(400).optional(),
   items: z
     .array(
@@ -40,6 +54,31 @@ const orderSchema = z.object({
     )
     .min(1, "Add at least one item to your order.")
     .max(50, "Too many items in one order. Please call us for big orders."),
+});
+
+const orderSchema = baseOrderSchema.superRefine((data, ctx) => {
+  if (data.fulfillment === "delivery" && !data.address) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["address"],
+      message: "Please enter your full delivery address.",
+    });
+  }
+  if (data.paymentMethod !== "cash") {
+    if (!data.trxId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["trxId"],
+        message: "Please enter the transaction ID (TrxID) from your bKash/Nagad app.",
+      });
+    } else if (!/^[A-Z0-9]{6,15}$/.test(data.trxId)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["trxId"],
+        message: "That TrxID does not look right. It is 6-15 letters/numbers, e.g. 8A5KD2XRQ9.",
+      });
+    }
+  }
 });
 
 /** Flat lookup of every menu item, id -> {name, price, category} */
@@ -67,12 +106,26 @@ function buildWhatsAppMessage(
   total: number,
   customerName: string,
   phone: string,
-  pickupTime: string,
-  notes?: string
+  data: {
+    fulfillment: "pickup" | "delivery";
+    address?: string;
+    pickupTime: string;
+    paymentMethod: "cash" | "bkash" | "nagad";
+    trxId?: string;
+    notes?: string;
+  }
 ): string {
   const itemLines = lines
     .map((l) => `${l.qty}x ${l.name} (${formatTk(l.price * l.qty)})`)
     .join("\n");
+  const paymentLabel =
+    data.paymentMethod === "cash"
+      ? data.fulfillment === "delivery"
+        ? "Cash on delivery"
+        : "Cash at counter"
+      : data.paymentMethod === "bkash"
+        ? `bKash (TrxID: ${data.trxId})`
+        : `Nagad (TrxID: ${data.trxId})`;
   const parts = [
     `New online order ${orderNumber} from the Waffled website`,
     "",
@@ -82,10 +135,16 @@ function buildWhatsAppMessage(
     "",
     `Name: ${customerName}`,
     `Phone: ${phone}`,
-    `Pickup: ${pickupTime}`,
+    data.fulfillment === "delivery"
+      ? `Type: Delivery (preferred ${data.pickupTime})`
+      : `Type: Pickup (${data.pickupTime})`,
   ];
-  if (notes) {
-    parts.push(`Notes: ${notes}`);
+  if (data.fulfillment === "delivery" && data.address) {
+    parts.push(`Deliver to: ${data.address}`);
+  }
+  parts.push(`Payment: ${paymentLabel}`);
+  if (data.notes) {
+    parts.push(`Notes: ${data.notes}`);
   }
   return parts.join("\n");
 }
@@ -114,7 +173,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: firstError }, { status: 400 });
   }
 
-  const { customerName, phone, pickupTime, notes, items } = parsed.data;
+  const { customerName, phone, fulfillment, address, pickupTime, paymentMethod, trxId, notes, items } =
+    parsed.data;
 
   // Re-price every line from the trusted menu (client prices are ignored)
   const priced: { id: string; name: string; price: number; qty: number; category: string }[] = [];
@@ -147,7 +207,11 @@ export async function POST(request: Request) {
             orderNumber,
             customerName,
             phone,
+            fulfillment,
+            address: address ?? null,
             pickupTime,
+            paymentMethod,
+            trxId: trxId ?? null,
             notes: notes ?? null,
             items: JSON.stringify(priced.map(({ id, name, price, qty }) => ({ id, name, price, qty }))),
             total,
@@ -159,15 +223,14 @@ export async function POST(request: Request) {
     }
     if (!saved) throw new Error("Could not save order");
 
-    const message = buildWhatsAppMessage(
-      saved.orderNumber,
-      priced,
-      total,
-      customerName,
-      phone,
+    const message = buildWhatsAppMessage(saved.orderNumber, priced, total, customerName, phone, {
+      fulfillment,
+      address,
       pickupTime,
-      notes
-    );
+      paymentMethod,
+      trxId,
+      notes,
+    });
     const whatsappUrl = `${siteConfig.whatsappUrl}?text=${encodeURIComponent(message)}`;
 
     return NextResponse.json({

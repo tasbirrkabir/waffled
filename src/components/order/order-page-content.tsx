@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
+  Bike,
   Check,
   Clock,
   Loader2,
@@ -13,6 +14,7 @@ import {
   Phone,
   Plus,
   ShoppingBag,
+  Smartphone,
   Store,
   Trash2,
   Wallet,
@@ -44,7 +46,14 @@ interface OrderSuccess {
   whatsappUrl: string;
   lines: CartLine[];
   name: string;
+  fulfillment: "pickup" | "delivery";
+  address?: string;
+  paymentMethod: "cash" | "bkash" | "nagad";
+  trxId?: string;
 }
+
+type Fulfillment = "pickup" | "delivery";
+type PaymentMethod = "cash" | "bkash" | "nagad";
 
 const phoneRegex = /^(?:\+?880|0)1[3-9]\d{8}$/;
 
@@ -166,17 +175,37 @@ export function OrderPageContent() {
   const [activeCat, setActiveCat] = React.useState(menu[0].id);
   const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const [fulfillment, setFulfillment] = React.useState<Fulfillment>("pickup");
+  const [address, setAddress] = React.useState("");
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
+  const [trxId, setTrxId] = React.useState("");
   const [pickupTime, setPickupTime] = React.useState<string>(pickupOptions[0]);
   const [notes, setNotes] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [success, setSuccess] = React.useState<OrderSuccess | null>(null);
-  const [touched, setTouched] = React.useState<{ name?: boolean; phone?: boolean }>({});
+  const [touched, setTouched] = React.useState<{
+    name?: boolean;
+    phone?: boolean;
+    address?: boolean;
+    trxId?: boolean;
+  }>({});
 
   const subtotal = cartSubtotal(lines);
   const itemCount = lines.reduce((n, l) => n + l.qty, 0);
   const nameValid = name.trim().length >= 2;
   const phoneValid = validatePhone(phone);
-  const canSubmit = lines.length > 0 && nameValid && phoneValid && !submitting;
+  const addressValid = address.trim().length >= 10;
+  const needsAddress = fulfillment === "delivery";
+  const normalizedTrx = trxId.trim().toUpperCase();
+  const trxIdValid = /^[A-Z0-9]{6,15}$/.test(normalizedTrx);
+  const needsTrx = paymentMethod !== "cash";
+  const canSubmit =
+    lines.length > 0 &&
+    nameValid &&
+    phoneValid &&
+    (!needsAddress || addressValid) &&
+    (!needsTrx || trxIdValid) &&
+    !submitting;
 
   const category = menu.find((c) => c.id === activeCat) ?? menu[0];
 
@@ -186,11 +215,15 @@ export function OrderPageContent() {
   }
 
   async function placeOrder() {
-    setTouched({ name: true, phone: true });
+    setTouched({ name: true, phone: true, address: true, trxId: true });
     if (!canSubmit) {
       if (lines.length === 0) toast.error("Add at least one item to your order first.");
       else if (!nameValid) toast.error("Please tell us your name.");
       else if (!phoneValid) toast.error("Please enter a valid Bangladeshi phone number.");
+      else if (needsAddress && !addressValid)
+        toast.error("Please enter your full delivery address (house, road, area).");
+      else if (needsTrx && !trxIdValid)
+        toast.error("Please enter the TrxID from your bKash/Nagad transaction.");
       return;
     }
     setSubmitting(true);
@@ -201,7 +234,11 @@ export function OrderPageContent() {
         body: JSON.stringify({
           customerName: name.trim(),
           phone: phone.trim(),
+          fulfillment,
+          address: needsAddress ? address.trim() : undefined,
           pickupTime,
+          paymentMethod,
+          trxId: needsTrx ? normalizedTrx : undefined,
           notes: notes.trim() || undefined,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
         }),
@@ -216,6 +253,10 @@ export function OrderPageContent() {
         whatsappUrl: data.whatsappUrl,
         lines,
         name: name.trim(),
+        fulfillment,
+        address: needsAddress ? address.trim() : undefined,
+        paymentMethod,
+        trxId: needsTrx ? normalizedTrx : undefined,
       });
       clear();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -260,8 +301,31 @@ export function OrderPageContent() {
                 <span className="font-bold tabular-nums text-ink/80">{formatTk(l.price * l.qty)}</span>
               </li>
             ))}
+            {success.fulfillment === "delivery" && success.address && (
+              <li className="flex items-start justify-between gap-3 border-t-2 border-dashed border-ink/20 pt-2 text-sm">
+                <span className="shrink-0 font-semibold text-ink">Deliver to</span>
+                <span className="max-w-[70%] text-right text-ink/80">{success.address}</span>
+              </li>
+            )}
+            <li className="flex items-start justify-between gap-3 border-t-2 border-dashed border-ink/20 pt-2 text-sm">
+              <span className="shrink-0 font-semibold text-ink">Payment</span>
+              <span className="max-w-[70%] text-right text-ink/80">
+                {success.paymentMethod === "cash"
+                  ? success.fulfillment === "delivery"
+                    ? "Cash on delivery"
+                    : "Cash at counter"
+                  : success.paymentMethod === "bkash"
+                    ? `bKash · TrxID ${success.trxId} (we verify it before starting your order)`
+                    : `Nagad · TrxID ${success.trxId} (we verify it before starting your order)`}
+              </span>
+            </li>
             <li className="flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-2 text-sm">
-              <span className="font-bold text-ink">Total (pay at pickup)</span>
+              <span className="font-bold text-ink">
+                Total{" "}
+                {success.paymentMethod === "cash"
+                  ? `(pay on ${success.fulfillment === "delivery" ? "delivery" : "pickup"})`
+                  : `(paid via ${success.paymentMethod === "bkash" ? "bKash" : "Nagad"})`}
+              </span>
               <span className="font-display font-bold tabular-nums text-pink">
                 {formatTk(success.total)}
               </span>
@@ -304,6 +368,10 @@ export function OrderPageContent() {
               setStep(1);
               setName("");
               setPhone("");
+              setFulfillment("pickup");
+              setAddress("");
+              setPaymentMethod("cash");
+              setTrxId("");
               setNotes("");
               setTouched({});
             }}
@@ -402,73 +470,286 @@ export function OrderPageContent() {
             </section>
 
             <section
-              aria-labelledby="pickup-heading"
+              aria-labelledby="fulfillment-heading"
               className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
             >
-              <h2 id="pickup-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+              <h2 id="fulfillment-heading" className="flex items-center gap-2 font-display text-lg font-bold">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan font-display text-xs font-bold text-ink">
                   2
                 </span>
-                Pickup
+                Pickup or delivery
               </h2>
-              <div className="mt-4 grid gap-4">
-                <div>
-                  <Label htmlFor="order-pickup" className="text-sm font-semibold">
-                    Pickup time
-                  </Label>
-                  <select
-                    id="order-pickup"
-                    value={pickupTime}
-                    onChange={(e) => setPickupTime(e.target.value)}
-                    className="mt-1.5 h-12 w-full rounded-xl border-2 border-ink/25 bg-cream px-3 text-sm font-medium text-ink focus:border-pink focus:outline-none"
-                  >
-                    {pickupOptions.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="order-notes" className="text-sm font-semibold">
-                    Notes <span className="font-normal text-muted-warm">(optional)</span>
+
+              {/* Fulfillment toggle */}
+              <div className="mt-4 grid grid-cols-2 gap-3" role="group" aria-label="How do you want your order">
+                {(
+                  [
+                    {
+                      value: "pickup" as const,
+                      icon: Store,
+                      title: "Pickup",
+                      sub: "Collect from the shop",
+                    },
+                    {
+                      value: "delivery" as const,
+                      icon: Bike,
+                      title: "Delivery",
+                      sub: "We bring it to you",
+                    },
+                  ] as const
+                ).map(({ value, icon: Icon, title, sub }) => {
+                  const active = fulfillment === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setFulfillment(value)}
+                      className={cn(
+                        "flex min-h-11 flex-col items-start gap-1 rounded-2xl border-2 p-3.5 text-left transition-all",
+                        active
+                          ? "border-ink bg-ink text-cream shadow-[3px_3px_0_0_rgba(32,23,25,0.25)]"
+                          : "border-ink/20 bg-cream text-ink hover:border-ink"
+                      )}
+                    >
+                      <Icon className={cn("h-5 w-5", active ? "text-lime" : "text-pink")} aria-hidden />
+                      <span className="text-sm font-bold leading-tight">{title}</span>
+                      <span className={cn("text-xs leading-tight", active ? "text-cream/70" : "text-muted-warm")}>
+                        {sub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Delivery address */}
+              {fulfillment === "delivery" && (
+                <div className="mt-4">
+                  <Label htmlFor="order-address" className="text-sm font-semibold">
+                    Delivery address <span className="text-red-600">*</span>
                   </Label>
                   <Textarea
-                    id="order-notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Extra Nutella? Less sweet? Tell us here."
-                    maxLength={400}
+                    id="order-address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    onBlur={() => setTouched((t) => ({ ...t, address: true }))}
+                    placeholder="House / flat, road, area, landmark. e.g. 12/3 College Road, opposite the bank, Sreemangal"
+                    maxLength={200}
+                    required
+                    aria-invalid={touched.address && !addressValid}
                     className="mt-1.5 min-h-20 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
                   />
+                  {touched.address && !addressValid ? (
+                    <p className="mt-1 text-xs font-medium text-red-600">
+                      Please enter your full address (house, road, area) so the rider can find you.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-warm">
+                      Our rider calls this number on the way. Delivery area and any charge are confirmed on call.
+                    </p>
+                  )}
                 </div>
+              )}
+
+              {/* Time */}
+              <div className="mt-4">
+                <Label htmlFor="order-time" className="text-sm font-semibold">
+                  {fulfillment === "delivery" ? "Preferred time" : "Pickup time"}
+                </Label>
+                <select
+                  id="order-time"
+                  value={pickupTime}
+                  onChange={(e) => setPickupTime(e.target.value)}
+                  className="mt-1.5 h-12 w-full rounded-xl border-2 border-ink/25 bg-cream px-3 text-sm font-medium text-ink focus:border-pink focus:outline-none"
+                >
+                  {pickupOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+                {fulfillment === "delivery" && (
+                  <p className="mt-1 text-xs text-muted-warm">
+                    Preferred time for delivery. We call to confirm the exact window.
+                  </p>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="mt-4">
+                <Label htmlFor="order-notes" className="text-sm font-semibold">
+                  Notes <span className="font-normal text-muted-warm">(optional)</span>
+                </Label>
+                <Textarea
+                  id="order-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Extra Nutella? Less sweet? Tell us here."
+                  maxLength={400}
+                  className="mt-1.5 min-h-20 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+                />
               </div>
             </section>
 
+            {/* Payment */}
             <section
-              aria-label="How pickup works"
+              aria-labelledby="payment-heading"
+              className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
+            >
+              <h2 id="payment-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple text-white font-display text-xs font-bold">
+                  3
+                </span>
+                Payment
+              </h2>
+
+              <div className="mt-4 grid gap-3" role="group" aria-label="Payment method">
+                {(
+                  [
+                    {
+                      value: "cash" as const,
+                      icon: Wallet,
+                      title: "Cash",
+                      sub:
+                        fulfillment === "delivery"
+                          ? "Pay the rider on delivery"
+                          : "Pay at the counter",
+                    },
+                    {
+                      value: "bkash" as const,
+                      icon: Smartphone,
+                      title: "bKash",
+                      sub: "Send money, then enter TrxID",
+                    },
+                    {
+                      value: "nagad" as const,
+                      icon: Smartphone,
+                      title: "Nagad",
+                      sub: "Send money, then enter TrxID",
+                    },
+                  ] as const
+                ).map(({ value, icon: Icon, title, sub }) => {
+                  const active = paymentMethod === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setPaymentMethod(value)}
+                      className={cn(
+                        "flex min-h-11 items-center gap-3.5 rounded-2xl border-2 p-3.5 text-left transition-all",
+                        active
+                          ? "border-ink bg-ink text-cream shadow-[3px_3px_0_0_rgba(32,23,25,0.25)]"
+                          : "border-ink/20 bg-cream text-ink hover:border-ink"
+                      )}
+                    >
+                      <Icon className={cn("h-5 w-5 shrink-0", active ? "text-lime" : "text-pink")} aria-hidden />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold leading-tight">{title}</span>
+                        <span className={cn("block text-xs leading-tight", active ? "text-cream/70" : "text-muted-warm")}>
+                          {sub}
+                        </span>
+                      </span>
+                      {active && <Check className="ml-auto h-5 w-5 shrink-0 text-lime" strokeWidth={3} aria-hidden />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile money instructions + TrxID */}
+              {paymentMethod !== "cash" && (
+                <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 bg-cream p-4">
+                  <p className="text-sm leading-relaxed text-ink">
+                    Send{" "}
+                    <strong className="font-display text-pink tabular-nums">{formatTk(subtotal)}</strong> to{" "}
+                    <strong className="font-display">
+                      {paymentMethod === "bkash"
+                        ? siteConfig.payments.bkashNumber
+                        : siteConfig.payments.nagadNumber}
+                    </strong>{" "}
+                    ({paymentMethod === "bkash" ? "bKash" : "Nagad"} app, Send Money), then enter the
+                    TrxID below. We verify it before making your order.
+                  </p>
+                  <div className="mt-3">
+                    <Label htmlFor="order-trxid" className="text-sm font-semibold">
+                      Transaction ID (TrxID) <span className="text-red-600">*</span>
+                    </Label>
+                    <Input
+                      id="order-trxid"
+                      value={trxId}
+                      onChange={(e) => setTrxId(e.target.value)}
+                      onBlur={() => setTouched((t) => ({ ...t, trxId: true }))}
+                      placeholder="e.g. 8A5KD2XRQ9"
+                      maxLength={15}
+                      autoCapitalize="characters"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      required
+                      aria-invalid={touched.trxId && !trxIdValid}
+                      className="mt-1.5 h-12 border-2 border-ink/25 bg-white font-display tracking-wider uppercase focus-visible:ring-pink"
+                    />
+                    {touched.trxId && !trxIdValid ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">
+                        Enter the TrxID (6-15 letters/numbers) from your {paymentMethod === "bkash" ? "bKash" : "Nagad"} transaction history.
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-muted-warm">
+                        Find it in your {paymentMethod === "bkash" ? "bKash" : "Nagad"} app under recent transactions.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Live recap of the two choices */}
+            <section
+              aria-label="Your choices"
               className="grid gap-3 rounded-3xl border-2 border-dashed border-ink/25 bg-white/60 p-5 sm:grid-cols-2 sm:p-6"
             >
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-lime-soft">
-                  <Store className="h-5 w-5 text-ink" aria-hidden />
+                  {fulfillment === "pickup" ? (
+                    <Store className="h-5 w-5 text-ink" aria-hidden />
+                  ) : (
+                    <Bike className="h-5 w-5 text-ink" aria-hidden />
+                  )}
                 </span>
-                <div>
-                  <p className="text-sm font-bold">Pickup only</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">
+                    {fulfillment === "pickup" ? "Pickup from the shop" : "Delivery to you"}
+                  </p>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-warm">
-                    {siteConfig.address.street}, {siteConfig.address.locality}{" "}
-                    {siteConfig.address.postalCode}
+                    {fulfillment === "pickup"
+                      ? `${siteConfig.address.street}, ${siteConfig.address.locality} ${siteConfig.address.postalCode}`
+                      : address.trim()
+                        ? address.trim()
+                        : "Add your address above"}
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-orange-soft">
-                  <Wallet className="h-5 w-5 text-ink" aria-hidden />
+                  {paymentMethod === "cash" ? (
+                    <Wallet className="h-5 w-5 text-ink" aria-hidden />
+                  ) : (
+                    <Smartphone className="h-5 w-5 text-ink" aria-hidden />
+                  )}
                 </span>
-                <div>
-                  <p className="text-sm font-bold">Pay at the counter</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">
+                    {paymentMethod === "cash"
+                      ? fulfillment === "delivery"
+                        ? "Cash on delivery"
+                        : "Pay at the counter"
+                      : paymentMethod === "bkash"
+                        ? "bKash · TrxID sent for verification"
+                        : "Nagad · TrxID sent for verification"}
+                  </p>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted-warm">
-                    No advance payment. Cash or mobile wallet when you collect.
+                    {paymentMethod === "cash"
+                      ? "No advance payment needed."
+                      : "We verify your TrxID before starting the order."}
                   </p>
                 </div>
               </div>
@@ -587,7 +868,7 @@ export function OrderPageContent() {
                       <span className="tabular-nums">{itemCount}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">Total (pay at pickup)</span>
+                      <span className="font-semibold">Total</span>
                       <span className="font-display text-2xl font-bold tabular-nums">
                         {formatTk(subtotal)}
                       </span>
@@ -633,7 +914,7 @@ export function OrderPageContent() {
             Build your order
           </h1>
           <p className="mt-1.5 text-sm text-muted-warm sm:text-base">
-            Pick your treats, then checkout. Pay at pickup, ready in 15-25 min.
+            Pick your treats, then checkout. Pickup or delivery, ready in 15-25 min.
           </p>
         </div>
         <CheckoutSteps step={1} />
@@ -641,10 +922,10 @@ export function OrderPageContent() {
 
       {/* Trust strip */}
       <div className="mt-5 flex flex-wrap gap-2.5">
-        {[
+        {[ 
           { icon: Clock, label: "Ready in 15-25 min" },
-          { icon: Wallet, label: "Pay at pickup" },
-          { icon: MapPin, label: "Pickup from Radhanagar Road" },
+          { icon: Wallet, label: "Cash, bKash or Nagad" },
+          { icon: MapPin, label: "Pickup or delivery" },
         ].map(({ icon: Icon, label }) => (
           <span
             key={label}

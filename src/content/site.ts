@@ -8,6 +8,15 @@ export const siteConfig = {
   phoneE164: "+8801723399638",
   whatsappUrl: "https://wa.me/8801723399638",
   email: "waffledshop.bd@gmail.com",
+  /**
+   * Numbers shown at checkout for "send money" payments.
+   * NOTE: owner should confirm dedicated bKash/Nagad merchant numbers;
+   * for now we use the shop's known contact number from Google Maps.
+   */
+  payments: {
+    bkashNumber: "01723-399638",
+    nagadNumber: "01723-399638",
+  },
   address: {
     street: "Radhanagar Road",
     locality: "Sreemangal",

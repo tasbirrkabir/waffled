@@ -23,13 +23,22 @@ model CtaEvent {
   @@index([type, createdAt])
 }
 
-// Online pickup orders placed through /order (confirmed via WhatsApp/call)
+// Online orders placed through /order (confirmed via WhatsApp/call)
 model Order {
   id           String   @id @default(cuid())
   orderNumber  String   @unique
   customerName String
   phone        String
+  // "pickup" | "delivery"
+  fulfillment  String   @default("pickup")
+  // Delivery address, required when fulfillment = "delivery"
+  address      String?
+  // Chosen (pickup) or preferred (delivery) time slot
   pickupTime   String
+  // "cash" | "bkash" | "nagad"
+  paymentMethod String  @default("cash")
+  // bKash/Nagad transaction id for verification, required when paymentMethod != "cash"
+  trxId        String?
   notes        String?
   items        String // JSON-encoded [{id,name,price,qty}]
   total        Int
