@@ -1,0 +1,245 @@
+     1→# Worklog — Waffled Sreemangal Website
+     2→
+     3→## Project Overview
+     4→Official website for **Waffled Sreemangal** — a waffle/dessert shop in Sreemangal, Sylhet, Bangladesh.
+     5→Single-page site (route `/` only) with anchor navigation, built with Next.js 16 App Router + TypeScript + Tailwind CSS 4 + shadcn/ui.
+     6→
+     7→---
+     8→Task ID: 1
+     9→Agent: main (Z.ai Code)
+    10→Task: Research brand, process assets, create content config, DB schema
+    11→
+    12→Work Log:
+    13→- Read all 11 spec files from `upload/waffled-kit/waffled-sreemangal-website-kit/` (research, PRD, sitemap, design system, copy, menu model, SEO, tech spec, checklists)
+    14→- Analyzed logo image (`public/images/logo.png` — colorful splash "W" with black outline, vibrant purple/cyan/pink/orange)
+    15→- Analyzed promo video (11.8s, 720x1280): shop interior (black counter + gold slats, pop-art murals, waffle mascot characters), waffle pops on sticks in white boxes, menu board with prices
+    16→- Transcribed menu from video frames (verified across multiple high-res crops):
+    17→  - Classic: Nutella Crunch 159, Red Velvet 169, Strawberry Swirl 169, Blueberry Burst 179, Choco Chip Classic 179
+    18→  - New Arrivals: Oreo Crunch 219, Biscoff Bliss 219
+    19→  - Nutella Lovers: Banana Nutella w/ Nuts 169, Nutella Crunch w/ Nuts 169, Strawberry Banana Nutella 189, Double Strawberry Nutella 189, Kitkat Crunch 189
+    20→  - Shakes: Oreo Crush 159, Strawberry Breeze 159, Kitkat Fusion 159, Blueberry Frost 169, Nutella Bliss 179
+    21→  - Drinks/Add-ons: Mint Lemonade 49, House Milk Coffee 80, add-ons 50 each (ice cream, whipped cream, extra Nutella, extra nuts, choco chip)
+    22→- Verified business data via Restaurant Guru listing: phone +880 1723-399638, hours Sun-Sat 12PM-11PM (Mon till 11:30PM), takeaway yes, desserts category
+    23→- Processed assets with `scripts/process_assets.py`:
+    24→  - `public/images/logo.png` (512px, transparent bg) + `logo-full.png` + `favicon-48.png` + `apple-touch-icon.png` + `icon-192.png`
+    25→  - `public/images/hero-waffle.webp` (waffle pops close-up — HERO)
+    26→  - `public/images/sig-strawberry.webp`, `sig-oreo.webp`, `sig-nutella.webp` (signature cards)
+    27→  - `public/images/gallery/*.webp` — 8 photos: interior-counter, counter-order, ordering-experience, mural-logo, menu-card, shop-sign, waffle-spread, waffle-closeup
+    28→  - `public/images/og-image.jpg` (1200x630)
+    29→- Created `src/content/site.ts` (siteConfig: name, phone, address, hours, socials, maps URLs, isOpenNow/getTodayHours helpers)
+    30→- Created `src/content/menu.ts` (menu categories, signaturePicks, faqs)
+    31→- Updated `prisma/schema.prisma`: Subscriber (email unique), CtaEvent (type, createdAt) — pushed to SQLite
+    32→
+    33→Stage Summary:
+    34→- ALL brand data verified & centralized in src/content/. Assets in public/images/.
+    35→- Brand: vibrant Gen-Z street-pop aesthetic. Palette (from kit 04): ink #201719, cream #FFF7EC, pink #F24C8B, orange #FF7B30, lime #BCE84A, cyan #42C7D9 + purple accent from logo (#7B4FF3-ish). Fonts: Space Grotesk (display) + Inter (body) + Hind Siliguri (Bangla accent line).
+    36→- Address: Radhanagar Road, Sreemangal 3210, Sylhet. Landmark: near Grand Sultan Tea Resort, entrance of Radhanagar Road.
+    37→- Socials: FB https://www.facebook.com/waffledshopbd/ · IG https://www.instagram.com/waffled.bd/ · Email waffledshop.bd@gmail.com
+    38→- Maps URL: https://www.google.com/maps?q=Waffled+Sreemangal,+Sreemangal+3210&ftid=0x375179000670e393:0xdc3b7b95a6ea6dc4
+    39→- Embed URL: https://maps.google.com/maps?q=Waffled%20Sreemangal%2C%20Sreemangal%203210&t=&z=16&ie=UTF8&iwloc=&output=embed
+    40→- API contracts for Task 2-b:
+    41→  - POST /api/subscribe {email} → {success, message?} | 400 {success:false, error} | 409 duplicate
+    42→  - POST /api/events {type: "menu_click"|"directions_click"|"phone_click"|"social_click"} → {success:true}
+    43→
+    44→---
+    45→Task ID: 2-b
+    46→Agent: full-stack-developer
+    47→Task: Build API routes /api/subscribe and /api/events
+    48→
+    49→Work Log:
+    50→- Read worklog.md for context; confirmed prisma/schema.prisma already has Subscriber + CtaEvent pushed to SQLite, and src/lib/db.ts already exists with the Prisma singleton pattern (used as-is)
+    51→- Created src/lib/rate-limit.ts: shared fixed-window in-memory rate limiter (Map stored on globalThis to survive dev hot-reload, same pattern as db singleton) + getClientIp() helper reading x-forwarded-for → x-real-ip → "unknown"; opportunistic cleanup at 10k buckets
+    52→- Created src/app/api/subscribe/route.ts (POST):
+    53→  - zod v4 schema: string → trim → toLowerCase → max(254) → pipe(z.email()) so emails are normalized before unique check
+    54→  - 400 {"success":false,"error":"Please enter a valid email address."} on invalid/malformed body (request.json() failure caught → null → fails validation)
+    55→  - P2002 Prisma error caught → 200 {"success":true,"message":"You're already on the list!"}
+    56→  - Success → 200 {"success":true,"message":"You're on the list — we'll ping you when new flavours drop."}
+    57→  - Other errors → 500 {"success":false,"error":"Something went wrong. Please try again."} (logged to console)
+    58→  - Rate limit 5 req/min/IP → 429 {"success":false,"error":"Too many requests. Please try again shortly."}
+    59→- Created src/app/api/events/route.ts (POST): z.enum whitelist ["menu_click","directions_click","phone_click","social_click"], 400 {"success":false} on invalid type/body, inserts CtaEvent, 200 {"success":true}, rate limit 60/min/IP → 429, errors → 500 {"success":false}
+    60→- Created src/lib/track.ts: trackEvent(type) fire-and-forget client helper (fetch + .catch, wrapped in try/catch, never throws/blocks navigation)
+    61→- Ran `bun run lint` — clean; `bunx tsc --noEmit` — clean for src/ (only pre-existing errors in examples/ + skills/ folders)
+    62→- curl-tested against dev server (all verified in dev.log too):
+    63→  - valid email → 200 success message; repeat → 200 "You're already on the list!"; "not-an-email" → 400
+    64→  - "  Normalize.Test@Example.COM  " → 200, stored as normalize.test@example.com; lowercase variant → duplicate message (normalization proven)
+    65→  - menu_click → 200 {"success":true}; bad_type → 400; all 4 whitelisted types → 200; malformed JSON → 400
+    66→  - burst of 6 subscribe calls after quota exhausted → all 429 with friendly error; after window reset → 200 again
+    67→- Verified DB via bun -e script: subscribers=3 (test@, normalize.test@, recovery@example.com — all lowercase), ctaEvents=5 (menu_click×2, directions_click×1, phone_click×1, social_click×1); rate-limited/invalid requests inserted nothing
+    68→
+    69→Stage Summary:
+    70→- Routes created: POST /api/subscribe (email capture w/ zod validation, normalization, friendly P2002 dedup, 5/min/IP rate limit), POST /api/events (whitelisted CTA event tracking, 60/min/IP rate limit)
+    71→- Libs created: src/lib/rate-limit.ts (shared), src/lib/track.ts (client-safe helper for frontend agent to import)
+    72→- All curl tests passed with exact contract response shapes; lint + tsc clean; data verified in SQLite
+    73→- Decisions: duplicate subscribe returns 200 (not 409) per task spec — supersedes the 409 noted in worklog Task 1 contract; rate limit checked BEFORE validation (brute-force resistant); 429 on /api/events returns {"success":false}; left src/lib/db.ts untouched; did NOT touch page.tsx/components/content/globals.css (frontend agent's scope)
+    74→- Frontend integration notes: import { trackEvent } from "@/lib/track" (typed TrackEventType union); subscribe form should POST {"email"} to /api/subscribe and can render `message` directly from response on success, `error` on failure (400/429/500)
+    75→
+    76→---
+    77→Task ID: 2-a (retry by main agent after subagent timeout) + 3 (verification)
+    78→Agent: main (Z.ai Code)
+    79→Task: Build complete frontend UI, verify with agent-browser, fix issues
+    80→
+    81→Work Log:
+    82→- Frontend subagent timed out without producing files; built all components directly:
+    83→  - src/app/globals.css — Waffled design tokens (ink/cream/pink/orange/lime/cyan/purple), Tailwind 4 @theme mapping, marquee + spin-slow keyframes, reduced-motion support, marker-underline utility
+    84→  - src/app/layout.tsx — Space Grotesk + Inter + Hind Siliguri fonts, full SEO metadata, OG/Twitter cards, Toaster (sonner)
+    85→  - src/components/site-header.tsx — sticky header, logo tile, desktop nav + open-now pill, custom accessible mobile drawer (replaced Radix Sheet to fix hydration mismatch), skip-link
+    86→  - src/components/hero-section.tsx — split hero with sprinkle pattern, highlight underline, Bangla tagline, sticker price badge, rotating "WAFFLE LOVE" badge, polaroid card, ink marquee strip
+    87→  - src/components/signature-section.tsx — 3 staggered cards from signaturePicks
+    88→  - src/components/menu-section.tsx — category tabs (role=tablist) + animated item grid + call-to-confirm note
+    89→  - src/components/about-section.tsx — photo collage + features + social CTA
+    90→  - src/components/gallery-section.tsx — masonry grid + accessible Dialog lightbox
+    91→  - src/components/reviews-section.tsx — dark ink section, 3 real Google review quotes, review/social CTAs
+    92→  - src/components/visit-section.tsx — info card (address/hours table with Today highlight + open-now badge/contact) + Google Maps iframe embed + directions overlay
+    93→  - src/components/faq-section.tsx — sticky heading + shadcn Accordion
+    94→  - src/components/site-footer.tsx — 4-col footer with newsletter form → /api/subscribe with sonner toasts
+    95→  - src/components/mobile-action-bar.tsx — fixed bottom Menu/Directions/Call with safe-area padding
+    96→  - src/app/page.tsx — section assembly + Restaurant JSON-LD schema (no aggregateRating per truthfulness rules)
+    97→- Browser verification (agent-browser, 1440px + 390px):
+    98→  - All 11 sections render correctly when scrolled (initial full-page screenshot showed opacity-0 whileInView states — confirmed false alarm)
+    99→  - Menu tabs switch categories ✓ (Shakes→Oreo Crush, Nutella Lovers→Kitkat Crunch)
+   100→  - Gallery lightbox opens/closes ✓; FAQ accordion expands with content ✓
+   101→  - Newsletter subscribe: success toast + duplicate "already on the list" toast ✓
+   102→  - Mobile: no horizontal overflow at 390px, action bar present, footer visible, drawer opens/navigates/closes ✓
+   103→  - Desktop anchor nav lands correctly below sticky header (scroll-mt-24) ✓
+   104→  - 8 tel: links, 6 maps links, FB/IG links all present; 18 images, 0 broken ✓
+   105→- Fixed: Radix Sheet hydration mismatch (aria-controls ID) by replacing with deterministic custom drawer; fixed Missing DialogDescription warning
+   106→- Cleaned test data from DB (subscribers + ctaEvents)
+   107→- Final lint clean; dev.log clean (only harmless metadataBase dev warning — no confirmed domain yet, per spec do not invent one)
+   108→
+   109→Stage Summary:
+   110→- Website complete and browser-verified: single-page landing with header/hero/marquee/signature/menu/about/gallery/reviews/visit/FAQ/footer/mobile-action-bar
+   111→- All business data from verified sources (video menu transcription, Restaurant Guru, socials from user); menu carries "may change, call to confirm" note
+   112→- APIs live: /api/subscribe + /api/events with rate limiting; event tracking wired to all CTAs
+   113→- Remaining owner inputs before production launch: confirm exact menu prices, domain for canonical/metadataBase, official review link, approve photos
+   114→
+   115→---
+   116→Task ID: 3
+   117→Agent: main (Z.ai Code)
+   118→Task: Google Maps data integration (pictures/menu/business info), remove em dashes + hero badge, add /menu + /order routes with online ordering
+   119→
+   120→Work Log:
+   121→- Scraped live Google Maps listing via agent-browser (desktop limited view + mobile emulation):
+   122→  - Business info: rating 4.9 (32 reviews), category "Dessert restaurant", address Sreemangal 3210, phone +880 1723-399638, plus code 8Q27+4P, coords 24.3003415/91.7642588, owner post "New items added" Jun 2 2026
+   123→  - Menu (from user's screenshot of the Menu tab, VLM-verified 3x): Basic Flavours Waffle = Strawberry 179, Blueberry 179, Choco Chip Classic 179, Banana 179, Kitkat 179, Nutella Crunch 159, Red Velvet 169, Swirl (Strawberry Swirl) 169, Oreo Crunch 219, Biscoff Bliss 219; second category "Nutella Flavours Wa..." (truncated)
+   124→  - Photos: extracted 8 googleusercontent URLs from DOM, downloaded at w=1600 (7 unique after md5 dedup), VLM-identified each
+   125→  - Review: full English review from Tawfiq Rahman (Local Guide, 5 stars, Food 5/Service 5/Atmosphere 4, takeout, live music) via "See original" toggle
+   126→- Processed photos to public/images/gmaps/*.webp (1400px, 82q) + hero-waffle-gmaps.webp (900x1125 4:5 crop of waffle pops photo)
+   127→- src/content/menu.ts: restructured to Google Maps categories (Basic Flavours Waffle with exact 10 items/prices; Nutella Flavours Waffle/Shakes/Drinks from video transcription), FAQ updated (order online answer, prices from 159), removed all em dashes
+   128→- src/content/site.ts: added rating {4.9, 32}, plusCode, coordinates, whatsappUrl, real place reviewsUrl; hours labels "12:00 PM to 11:00 PM" (no en dash); isOpenNow label "Open now, till X"
+   129→- hero-section.tsx: REMOVED "Waffle time · Sreemangal" pill badge; em dash removed; hero image now hero-waffle-gmaps.webp (real Google photo); price sticker 149->159; CTAs now Link to /order (primary) + /menu; added clickable Google rating chip (4.9, 32 reviews); rotating badge separator · -> ✦; marquee "RADHANAGAR · SREEMANGAL" -> "RADHANAGAR ROAD, SREEMANGAL"
+   130→- Removed ALL em/en dashes site-wide: site-header (aria-labels/alt), menu-section, signature-section, gallery-section, faq-section, about-section, reviews-section, site-footer, layout.tsx titles, api/subscribe message, lib/track comment
+   131→- site-header.tsx: nav now routes Menu->/menu, Order Online->/order, Our Story->/#story, Gallery->/#gallery, Visit Us->/#visit; desktop CTA "Order Online"->/order; brand link ->/
+   132→- mobile-action-bar.tsx: Menu->/menu, Order->/order, Call (tel:)
+   133→- site-footer.tsx: quickLinks use routes via Link; added plus code line
+   134→- NEW src/lib/cart-store.ts: Zustand cart (persist localStorage, max 20/item) + cartCount/cartSubtotal/formatTk helpers
+   135→- NEW src/components/order/add-to-cart-button.tsx: Add button morphs into qty stepper with toast
+   136→- NEW src/app/menu/page.tsx + menu-page-content.tsx: full menu route, sticky category chips (IntersectionObserver active state), item cards with tags + Add buttons, Google sync + 4.9 rating badges, Menu JSON-LD, CTAs
+   137→- NEW src/app/order/page.tsx + order-page-content.tsx: order flow (steps indicator, category tabs, sticky cart aside with qty steppers/remove, checkout form: name/BD phone validation/pickup select/notes, success view with order number + WhatsApp send + call + restart)
+   138→- NEW src/app/api/orders/route.ts: zod validation (BD phone regex, pickup enum, items 1-50 x qty 1-20), server re-prices from menu.ts (anti-tampering), WF-#### order numbers, WhatsApp message builder + wa.me URL, 3/min/IP rate limit
+   139→- prisma: added Order model (orderNumber unique, customerName, phone, pickupTime, notes, items JSON string, total, status), pushed + regenerated; dev server restarted (old client was cached on globalThis)
+   140→- Dev server restart procedure: double-fork setsid with ./node_modules/.bin/next (plain "next" not on PATH in detached bash)
+   141→- Verification (agent-browser + curl):
+   142→  - / /menu /order all 200; titles correct
+   143→  - Homepage DOM: no "Waffle time" badge, zero em/en dashes, 4.9+32 reviews shown, CTAs correct, hero image loads
+   144→  - 22 images 0 broken; all 7 gmaps photos load (gallery + hero polaroid)
+   145→  - /menu: 4 categories, all Google items, 27 add buttons, CTAs
+   146→  - Order flow E2E: added items on /menu, cart persisted to /order (localStorage), filled form, placed order WF-0001 total 537, WhatsApp URL decodes to formatted message, DB row saved correctly; validation errors (bad phone/bad item/empty) friendly; 429 rate limit works
+   147→  - Mobile 390px: action bar (Menu/Order/Call), no horizontal scroll possible, footer at bottom; VLM visual checks pass on home/order/menu
+   148→  - lint clean, tsc clean (src), dev.log clean; test orders + test subscriber cleaned from DB
+   149→
+   150→Stage Summary:
+   151→- Real Google Maps data fully integrated: 7 real photos, Google menu (Basic Flavours Waffle 10 items), 4.9/32 rating shown + JSON-LD aggregateRating, plus code, coords, real review (Tawfiq Rahman)
+   152→- Em dashes + "Waffle time · Sreemangal" badge removed everywhere (verified zero in rendered DOM)
+   153→- Multi-route site: / (home) + /menu (full menu) + /order (online ordering); cart persists across pages via Zustand localStorage
+   154→- Online ordering complete: server-validated, DB-persisted orders with WF-#### numbers, WhatsApp handoff (wa.me/8801723399638 pre-filled message) + call fallback, pay-at-pickup model
+   155→- APIs: /api/subscribe + /api/events (unchanged) + /api/orders (new)
+   156→
+   157→---
+   158→Task ID: 4
+   159→Agent: main (Z.ai Code)
+   160→Task: Fix mobile hero/sidebar glitch, remove Bangla text from home, redesign checkout as proper multi-step flow, add product images to every product
+   161→
+   162→Work Log:
+   163→- Analyzed user screenshot (VLM): "THE SHOP" polaroid card + price sticker overlapping hero image on mobile = the "sidebar glitch"; also confirmed via agent-browser iPhone 14 emulation + bounding-box measurements
+   164→- hero-section.tsx: removed Bangla tagline paragraph (siteConfig.taglineBn) entirely; hid polaroid card on mobile/tablet (hidden lg:block, was overlapping hero image + price sticker + mobile action bar); rotated badge offset reduced on mobile (-right-3 -top-5) to prevent viewport clipping
+   165→- site.ts: removed taglineBn; layout.tsx: removed Hind_Siliguri font import (no Bangla text anywhere now); globals.css: removed --font-bangla + .font-bangla
+   166→- ROOT CAUSE of horizontal "sidebar wiggle" found: visit-section map card animates from x:24 (framer-motion whileInView initial), extending 8px past viewport before animation triggers -> scrollWidth 398 vs 390. Fixed globally with `overflow-x: clip` on html in globals.css (clip preserves position:sticky, unlike hidden); verified scrollX locked to 0, sticky chips + sticky cart sidebar still work
+   167→- Generated 27 consistent product photos via z-ai-web-dev-sdk image generation (1024x1024, sequential with 429 backoff - API rate-limits concurrency):
+   168→  10 basic waffles, 5 nutella waffles, 5 shakes, 2 drinks, 5 add-ons; converted to 800px webp q80 (scripts/gen-product-images.ts + scripts/convert_products.py) -> public/images/products/*.webp (1.1MB total)
+   169→- menu.ts: added image + imageAlt to every MenuItem; signaturePicks now use product images
+   170→- NEW src/components/order/product-card.tsx: shared image card (square image, tag badges over image, name/price/desc/category, Add-to-cart) used on home menu section, /menu, /order
+   171→- REWROTE order-page-content.tsx as proper multi-step checkout (was single-page landing-style):
+   172→  Step 1 "Build your order": compact header + CheckoutSteps progress (Items -> Checkout -> Confirmed), trust chips, category tabs, 2-col mobile product grid, desktop sticky cart sidebar, mobile floating checkout bar above action bar
+   173→  Step 2 "Checkout": back link, Your details (name/phone) + Pickup (time/notes) numbered sections, pickup-only/pay-at-counter info card, order summary with editable line items; desktop 2-col sticky summary, mobile single col summary + form; sticky Place-order
+   174→  Step 3 Success: order number, itemized recap, WhatsApp/call CTAs, new-order restart
+   175→- menu-page-content.tsx: product image grid (4-col desktop), floating cart pill when cart non-empty -> /order
+   176→- menu-section.tsx (home): image ProductCards in 2-col mobile grid
+   177→- Toast overlap fix: [data-sonner-toaster] bottom raised to 12rem+safe-area on <768px (above action bar + floating cart pill); floating bars offset 3.75rem (clears action bar 3px border)
+   178→- Dev server Turbopack served stale CSS after edits (toast rule stayed 7rem) -> restarted dev server (kill next/next-server/postcss pids, setsid nohup ./node_modules/.bin/next dev -p 3000); CSS then served fresh
+   179→- E2E verified with agent-browser:
+   180→  Desktop: /order add 3 items -> Go to checkout -> form -> Place order WF-0002 ৳557 correct; WhatsApp message decodes with items/total/name/pickup; DB row saved; success view + item recap
+   181→  Mobile (iPhone 14): 2-col product grid, floating checkout bar above action bar (2 items ৳318), validation errors show (name/phone), order WF-0003 ৳318 placed; menu page floating pill works; toast clears pill (toastBottomEdge 652 < pillTop 710)
+   182→  Home: no Bangla text in DOM (only ৳ symbol), polaroid hidden on mobile/badge geometry verified via getBoundingClientRect, desktop polaroid reads as intentional collage
+   183→  All 27 product images load (0 broken) on /menu; lint clean; tsc clean for src/
+   184→- Cleaned test orders WF-0002/WF-0003 from DB (kept WF-0001, a real customer order from Tasbir Kabir)
+   185→
+   186→Stage Summary:
+   187→- All 4 user requests done: hero glitch fixed (polaroid hidden on mobile + global overflow-x clip kills the wiggle), Bangla text removed from home, checkout redesigned into a real 3-step e-commerce flow (browse -> checkout -> confirmed) with VLM grade A-, every product now has a unique appetizing product image
+   188→- New shared component: ProductCard (image + tags + add-to-cart) used across home/menu/order
+   189→- Assets: 27 AI product photos in public/images/products/ (800px webp), generation + conversion scripts kept in scripts/
+   190→- Note for future agents: Turbopack CSS may serve stale after globals.css edits -> restart dev server if CSS changes don't appear; keep dev server running via setsid nohup
+   191→
+   192→---
+   193→Task ID: 5
+   194→Agent: main (Z.ai Code)
+   195→Task: Fix build error "Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'"
+   196→
+   197→Work Log:
+   198→- Diagnosed: Turbopack's next/font/google pipeline fails to resolve its own internal font module for Space Grotesk in layout.tsx (GET / 500; network to fonts.googleapis.com fine, so it is a Turbopack pipeline bug, not connectivity)
+   199→- Fix strategy: remove next/font/google entirely; self-host fonts with plain @font-face to bypass the Turbopack font pipeline
+   200→- Downloaded latin variable fonts from Google Fonts CSS2 API (script parsed /* latin */ subset blocks; woff2 magic-byte verified):
+   201→  public/fonts/space-grotesk-var.woff2 (22KB, wght 300-700, md5 87c506d8)
+   202→  public/fonts/inter-var.woff2 (48KB, wght 100-900, md5 260c81a4)
+   203→  (CSS2 API returns one variable file per family; deduped 6 downloads to 2 files)
+   204→- layout.tsx: removed Space_Grotesk/Inter imports + variable classes; body now "font-sans antialiased"
+   205→- globals.css: added two @font-face rules (font-display swap, /fonts/*.woff2) after imports; :root now defines --font-space-grotesk and --font-inter (replacing vars next/font used to inject via body class)
+   206→- First attempt served PARTIAL CSS: @font-face present but :root block missing (Turbopack caught file between the two sequential edits of one MultiEdit) -> fonts registered but "unloaded", computed styles fell back to Tailwind default stack; confirmed via served chunk diff (167247 vs 167425 bytes)
+   207→- Killed dev server, cleared .next, restarted: first single-fork setsid attempt died silently mid cold-compile; second attempt with double-fork subshell "( setsid nohup ... & )" came up clean (pattern per Task 4 note)
+   208→- Full verification after restart:
+   209→  CSS chunk contains @font-face + :root font vars; document.fonts.check: Space Grotesk 600 + Inter 400 both "loaded"; computed body font = Inter stack, h1 = Space Grotesk stack
+   210→  / 200, /menu 200 (27 product images, 0 broken), /order 200 (3-step indicator, ৳ prices render)
+   211→  Golden path: /order -> add Strawberry -> Go to checkout -> step 2 form (name/phone/pickup/notes) + order summary + Place order button all present (no DB test order placed; WF-0001 real customer order untouched)
+   212→  Mobile 390px: horizontal scroll LOCKED (scrollX stays 0 after forced scrollTo(120,0); overflow-x: clip holds, no sidebar wiggle), fonts apply on mobile too
+   213→  Footer: pushed down naturally by long content (no overlap); VLM QA of desktop screenshots: typography correct + polished, zero broken images, no rendering glitches (polaroid/price-badge overlap on desktop hero = intentional collage, hidden on mobile per Task 4)
+   214→- lint clean; dev.log clean (only pre-existing harmless metadataBase dev warning)
+   215→
+   216→Stage Summary:
+   217→- Build error fixed by eliminating next/font/google: fonts now self-hosted at /public/fonts (2 variable woff2, latin), loaded via plain @font-face in globals.css, variables --font-space-grotesk/--font-inter defined in :root
+   218→- Zero visual change vs before (same Space Grotesk + Inter families and weights); site fully functional again on /, /menu, /order
+   219→- Ops lessons (again): Turbopack can serve PARTIAL stale CSS after rapid sequential edits -> clear .next + restart; dev server must be launched with double-fork setsid "( setsid nohup ./node_modules/.bin/next dev -p 3000 >> dev.log 2>&1 < /dev/null & )"
+   220→
+   221→---
+   222→Task ID: 6
+   223→Agent: main (Z.ai Code)
+   224→Task: Fix side menu drawer (fails when scrolled), fix images not loading, add delivery address + payment TrxID to checkout
+   225→
+   226→Work Log:
+   227→- Analyzed user screenshot (VLM): site in preview panel; drawer footer buttons visible; user reported 4 issues in Banglish
+   228→- ISSUE 1 drawer: ROOT CAUSE = MobileNavDrawer rendered INSIDE <header>; when scrolled>24px the header gets backdrop-blur-md, and backdrop-filter makes the header the containing block for fixed descendants -> the fixed drawer panel (inset-y-0 right-0) collapsed into the header's 64px box and stopped appearing. At page top (no blur) it worked -> exactly the user's symptom
+   229→- FIX: restructured site-header.tsx: state (navOpen) lifted to SiteHeader; MobileNavButton stays inside header; MobileNavDrawer (backdrop+panel) renders as SIBLING after </header> (ancestors = body/html only, no filter). Verified: at scrollY=2000 with header blur(12px) active, panel spans full viewport (844px, top:0), opens/closes, body scroll-lock restored
+   230→- ISSUE 2 images: root cause = /_next/image optimizer queue (logo even requested at w=3840 due to missing sizes; .next cache wipe during font fix made every transform cold). All assets are pre-optimized webp, so switched next.config.ts to images.unoptimized=true (direct static serve, zero optimizer requests); created logo-176.webp (176x157, 12KB, aspect-correct) from logo.png and swapped 3 references (header brand, drawer, footer). Verified: 0 broken images on / (33-34), /menu (30/30), /order; zero /_next/image requests
+   231→- ISSUE 3 delivery address: checkout section 2 rewritten from "Pickup" to "Pickup or delivery": Pickup/Delivery toggle cards; Delivery -> required address Textarea (min 10 chars, house/road/area placeholder) + "Preferred time" select with confirm-on-call note; Pickup -> "Pickup time" + shop address
+   232→- ISSUE 4 payment + TrxID: new section 3 "Payment": Cash (label adapts: Pay at the counter / Pay the rider on delivery) | bKash | Nagad; selecting bKash/Nagad shows send-money box with live total (formatTk) + number from siteConfig.payments + required TrxID input (6-15 alnum, uppercase-normalized, aria-invalid + helper text); live recap card reflects fulfillment + payment choices
+   233→- site.ts: added payments {bkashNumber, nagadNumber} = 01723-399638 (shop's known number; owner should confirm dedicated merchant numbers)
+   234→- prisma Order model: + fulfillment (default pickup), address?, paymentMethod (default cash), trxId? -> db:push; WF-0001/0002 backfilled pickup/cash
+   235→- api/orders: zod schema + superRefine cross-field rules (delivery => address required; bkash/nagad => TrxID required + /^[A-Z0-9]{6,15}$/); trxId transform uppercases; WhatsApp message now includes Type: Pickup/Delivery, Deliver to: address, Payment: bKash/Nagad (TrxID: X) or Cash at counter/Cash on delivery
+   236→- Success view: Deliver to row, Payment row (with "we verify it before starting your order" for mobile money), dynamic Total label (pay on pickup/delivery | paid via bKash/Nagad); restart resets all new fields
+   237→- Step 1 trust chips updated: "Cash, bKash or Nagad" + "Pickup or delivery"; both summary "Total (pay at pickup)" labels simplified to "Total"
+   238→- E2E verified (agent-browser 390x844 + 1440x900): drawer full-height at scrollY=2000 with blur active (VLM confirmed visual); full checkout E2E delivery+bKash+TrxID -> WF-0003 success view (Deliver to + TrxID + paid via bKash), DB row complete, WhatsApp message includes address/payment/TrxID (TrxID 8a5kd2xrq9 -> 8A5KD2XRQ9 uppercase); pickup+cash API path verified; VLM QA of checkout step 2 desktop: all sections present, no visual defects; mobile horizontal scroll still locked; 0 broken images; lint + tsc clean; dev.log clean
+   239→- Cleaned test orders WF-0003/WF-0004. NOTE: WF-0002 (Tasbir Kabir, ৳179, 11:03Z = 17:03 Dhaka) is a REAL customer order placed from the user's phone during testing - kept along with WF-0001
+   240→
+   241→Stage Summary:
+   242→- All 4 user issues fixed: drawer works at any scroll position (backdrop-filter containing-block bug, drawer moved outside header), images load reliably (optimizer bypassed, direct static webp + 12KB logo variant), checkout now asks pickup-or-delivery with required delivery address, payment offers Cash/bKash/Nagad with TrxID verification field
+   243→- Orders DB + WhatsApp handoff now carry fulfillment/address/paymentMethod/trxId; bKash/Nagad numbers live in siteConfig.payments (owner to confirm real merchant numbers)
+   244→- Remaining owner inputs: confirm bKash/Nagad numbers, whether a delivery fee/area limit applies (currently honest "confirmed on call" approach, no invented fees)
+   245→

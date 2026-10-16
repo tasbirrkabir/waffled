@@ -84,7 +84,7 @@ export function ProductCard({
           </p>
         )}
         <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-warm/70">
+          <span className="min-w-0 flex-1 truncate text-[0.65rem] font-semibold uppercase tracking-wider text-muted-warm/70">
             {category}
           </span>
           <AddToCartButton item={item} category={category} size="sm" className="shrink-0" />

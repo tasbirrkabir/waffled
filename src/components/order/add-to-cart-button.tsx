@@ -23,10 +23,12 @@ export function AddToCartButton({ item, category, size = "md", className }: Prop
 
   const baseBtn =
     "inline-flex items-center justify-center gap-1.5 rounded-full border-2 border-ink font-display font-bold transition-all active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink";
+  // Height classes shared by the "Add" button and the quantity pill so the
+  // card never shifts/resizes when an item is added (prevents overlap glitch).
   const sizeCls =
     size === "sm"
-      ? "min-h-9 px-3.5 text-xs"
-      : "min-h-11 px-5 text-sm";
+      ? "h-9 min-h-9 px-3.5 text-xs"
+      : "h-11 min-h-11 px-5 text-sm";
 
   if (!line) {
     return (
@@ -39,7 +41,7 @@ export function AddToCartButton({ item, category, size = "md", className }: Prop
         className={cn(
           baseBtn,
           sizeCls,
-          "bg-white text-ink shadow-[2.5px_2.5px_0_0_var(--color-ink)] hover:bg-lime hover:shadow-none hover:translate-x-[2.5px] hover:translate-y-[2.5px]",
+          "bg-white text-ink mb-[3px] shadow-[2.5px_2.5px_0_0_var(--color-ink)] hover:bg-lime hover:shadow-none hover:translate-x-[2.5px] hover:translate-y-[2.5px]",
           className
         )}
         aria-label={`Add ${item.name} to your order, ৳${item.price}`}
@@ -53,7 +55,11 @@ export function AddToCartButton({ item, category, size = "md", className }: Prop
   return (
     <div
       className={cn(
-        "inline-flex items-center overflow-hidden rounded-full border-2 border-ink bg-white shadow-[2.5px_2.5px_0_0_var(--color-ink)]",
+        "inline-flex items-center overflow-hidden rounded-full border-2 border-ink bg-white",
+        // Same height as the "Add" button + 2.5px reserved for the hard
+        // shadow so the pill never pokes past the card's bottom edge.
+        sizeCls,
+        "mb-[3px] shadow-[2.5px_2.5px_0_0_var(--color-ink)]",
         className
       )}
       role="group"
@@ -62,7 +68,7 @@ export function AddToCartButton({ item, category, size = "md", className }: Prop
       <button
         type="button"
         onClick={() => decrement(item.id)}
-        className="flex h-full min-h-9 items-center px-3 text-ink transition-colors hover:bg-pink hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-pink"
+        className="flex h-full min-h-0 items-center px-3 text-ink transition-colors hover:bg-pink hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-pink"
         aria-label={`Remove one ${item.name} from your order`}
       >
         <Minus className="h-3.5 w-3.5" aria-hidden />
@@ -76,7 +82,7 @@ export function AddToCartButton({ item, category, size = "md", className }: Prop
       <button
         type="button"
         onClick={() => increment(item.id)}
-        className="flex h-full min-h-9 items-center px-3 text-ink transition-colors hover:bg-lime focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-pink"
+        className="flex h-full min-h-0 items-center px-3 text-ink transition-colors hover:bg-lime focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-pink"
         aria-label={`Add one more ${item.name} to your order`}
       >
         <Plus className="h-3.5 w-3.5" aria-hidden />

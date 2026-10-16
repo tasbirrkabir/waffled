@@ -242,3 +242,37 @@ Stage Summary:
 - All 4 user issues fixed: drawer works at any scroll position (backdrop-filter containing-block bug, drawer moved outside header), images load reliably (optimizer bypassed, direct static webp + 12KB logo variant), checkout now asks pickup-or-delivery with required delivery address, payment offers Cash/bKash/Nagad with TrxID verification field
 - Orders DB + WhatsApp handoff now carry fulfillment/address/paymentMethod/trxId; bKash/Nagad numbers live in siteConfig.payments (owner to confirm real merchant numbers)
 - Remaining owner inputs: confirm bKash/Nagad numbers, whether a delivery fee/area limit applies (currently honest "confirmed on call" approach, no invented fees)
+
+---
+Task ID: 6
+Agent: main (Z.ai Code)
+Task: Home-page checkout popup, cart button overlap fix, footer credit change
+
+User requests (Banglish):
+1. "Home page theke keu order dile o jate niche checkout er popup ta ashe" — checkout popup must appear when ordering from home page
+2. "Cart e ekta add houar por dekho button overlap kore" — after adding to cart, buttons overlap (screenshot upload/Screenshot_20261017-040313.png)
+3. Footer: remove "Pressed fresh in Sreemangal, Bangladesh"; add "Developed by Tasbir Kabir" linking to tasbirkabir.me
+
+Work Log:
+- Analyzed user screenshot with VLM: quantity pill (- 1 +) clipped by card bottom border + category label "Basic Flavours Waffle" wrapping to 3 lines and colliding with the pill (mobile/landscape)
+- Reproduced in agent-browser at 412x915: label wrapped to 3 lines (59px wide), pill 40px vs Add button 36px (4px jump + shadow)
+- Fixed add-to-cart-button.tsx: normalized heights — sizeCls now "h-9 min-h-9" (sm) / "h-11 min-h-11" (md) applied to BOTH the Add button and the quantity pill container; inner +/- buttons use h-full min-h-0; both states get mb-[3px] to reserve room for the 2.5px hard shadow
+- Fixed product-card.tsx: category label now "min-w-0 flex-1 truncate" — single line with ellipsis, never wraps/never collides
+- Result measured in browser: heightShiftPx = 0 when adding (card no longer resizes), pill 36px, 19px clearance from card bottom border, label truncated cleanly
+- Created src/components/order/floating-cart-pill.tsx — shared FloatingCartPill component (framer-motion spring slide-up, cart count badge, subtotal, "Checkout →", links to /order; bottom position: above mobile action bar on mobile, bottom-6 on md+; mounted guard against hydration mismatch)
+- Wired FloatingCartPill into src/app/page.tsx (home) — checkout popup now appears on home the moment an item is added
+- Refactored menu-page-content.tsx to replace its inline duplicate pill with the shared FloatingCartPill (also fixes potential hydration flash there)
+- site-footer.tsx bottom bar: removed "Pressed fresh in Sreemangal, Bangladesh" block (lime square + text); added "Developed by [Tasbir Kabir]" link → https://tasbirkabir.me (target _blank, rel noopener noreferrer, pink underline accent)
+- Deleted synthetic test order ("Rahim Ahmed") from db/custom.db after golden-path test
+
+Verification (agent-browser):
+- Mobile 412x915 home: add item → pill fully inside card (not clipped), label 1-line truncated, dark "Your order ৳179 / Checkout" popup at bottom above action bar
+- Popup click → navigates /order with cart persisted; order page step 1 → step 2 → filled name/phone → Place order → "Order placed!" + order number + WhatsApp button + cart cleared
+- Desktop 1280x800: pill visible at 24px from bottom, centered; footer bottom bar = "© 2026 Waffled Sreemangal. All rights reserved." left + "Developed by Tasbir Kabir" right (VLM-verified); no "Pressed fresh" text anywhere in footer
+- /menu 200, /order 200, / 200; POST /api/orders 200; bun run lint clean; no hydration errors
+
+Stage Summary:
+- Product cards now have completely stable geometry when adding/removing items (zero layout shift) — overlap glitch eliminated at all viewports
+- Home page now has the same floating checkout popup as /menu (shared FloatingCartPill component, single source of truth)
+- Footer credit updated: "Developed by Tasbir Kabir" → tasbirkabir.me; "Pressed fresh" line removed
+- Key files: add-to-cart-button.tsx, product-card.tsx, floating-cart-pill.tsx (new), page.tsx, menu-page-content.tsx, site-footer.tsx

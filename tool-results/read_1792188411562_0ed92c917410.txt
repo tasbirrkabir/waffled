@@ -1,0 +1,1107 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  ArrowLeft,
+     7→  ArrowRight,
+     8→  Bike,
+     9→  Check,
+    10→  Clock,
+    11→  Loader2,
+    12→  MapPin,
+    13→  Minus,
+    14→  Phone,
+    15→  Plus,
+    16→  ShoppingBag,
+    17→  Smartphone,
+    18→  Store,
+    19→  Trash2,
+    20→  Wallet,
+    21→} from "lucide-react";
+    22→import { toast } from "sonner";
+    23→import { menu } from "@/content/menu";
+    24→import { siteConfig } from "@/content/site";
+    25→import { trackEvent } from "@/lib/track";
+    26→import { cartSubtotal, formatTk, useCart, type CartLine } from "@/lib/cart-store";
+    27→import { ProductCard } from "@/components/order/product-card";
+    28→import { Button } from "@/components/ui/button";
+    29→import { Input } from "@/components/ui/input";
+    30→import { Textarea } from "@/components/ui/textarea";
+    31→import { Label } from "@/components/ui/label";
+    32→import { cn } from "@/lib/utils";
+    33→
+    34→const pickupOptions = [
+    35→  "ASAP (about 15-25 min)",
+    36→  "In 30 minutes",
+    37→  "In 1 hour",
+    38→  "Tonight, around 7 PM",
+    39→  "Tonight, around 8 PM",
+    40→  "Tonight, around 9 PM",
+    41→] as const;
+    42→
+    43→interface OrderSuccess {
+    44→  orderNumber: string;
+    45→  total: number;
+    46→  whatsappUrl: string;
+    47→  lines: CartLine[];
+    48→  name: string;
+    49→  fulfillment: "pickup" | "delivery";
+    50→  address?: string;
+    51→  paymentMethod: "cash" | "bkash" | "nagad";
+    52→  trxId?: string;
+    53→}
+    54→
+    55→type Fulfillment = "pickup" | "delivery";
+    56→type PaymentMethod = "cash" | "bkash" | "nagad";
+    57→
+    58→const phoneRegex = /^(?:\+?880|0)1[3-9]\d{8}$/;
+    59→
+    60→function validatePhone(value: string): boolean {
+    61→  return phoneRegex.test(value.replace(/[\s-]/g, ""));
+    62→}
+    63→
+    64→type Step = 1 | 2;
+    65→
+    66→/* ------------------------------- Step header ------------------------------ */
+    67→
+    68→function CheckoutSteps({ step, done = false }: { step: Step; done?: boolean }) {
+    69→  const steps = [
+    70→    { n: 1, label: "Your items" },
+    71→    { n: 2, label: "Checkout" },
+    72→    { n: 3, label: "Confirmed" },
+    73→  ];
+    74→  const current = done ? 3 : step;
+    75→  return (
+    76→    <ol className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm font-medium" aria-label="Checkout progress">
+    77→      {steps.map((s, i) => {
+    78→        const isDone = current > s.n;
+    79→        const isCurrent = current === s.n;
+    80→        return (
+    81→          <li key={s.n} className="flex items-center gap-2">
+    82→            <span
+    83→              className={cn(
+    84→                "flex h-7 w-7 items-center justify-center rounded-full border-2 font-display text-xs font-bold",
+    85→                isDone
+    86→                  ? "border-lime bg-lime text-ink"
+    87→                  : isCurrent
+    88→                    ? "border-ink bg-ink text-cream"
+    89→                    : "border-ink/25 bg-white text-muted-warm"
+    90→              )}
+    91→              aria-current={isCurrent ? "step" : undefined}
+    92→            >
+    93→              {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} aria-hidden /> : s.n}
+    94→            </span>
+    95→            <span className={cn(isCurrent ? "text-ink" : "text-muted-warm")}>{s.label}</span>
+    96→            {i < steps.length - 1 && (
+    97→              <span aria-hidden className="ml-1 text-ink/25">
+    98→                →
+    99→              </span>
+   100→            )}
+   101→          </li>
+   102→        );
+   103→      })}
+   104→    </ol>
+   105→  );
+   106→}
+   107→
+   108→/* ------------------------------- Cart lines ------------------------------- */
+   109→
+   110→function CartLineRow({
+   111→  line,
+   112→  onInc,
+   113→  onDec,
+   114→  onRemove,
+   115→  compact = false,
+   116→}: {
+   117→  line: CartLine;
+   118→  onInc: (id: string) => void;
+   119→  onDec: (id: string) => void;
+   120→  onRemove: (id: string) => void;
+   121→  compact?: boolean;
+   122→}) {
+   123→  return (
+   124→    <li className="flex items-center gap-2.5 rounded-xl border-2 border-ink/10 bg-cream p-2.5">
+   125→      <div className="min-w-0 flex-1">
+   126→        <p className="truncate text-sm font-bold text-ink">{line.name}</p>
+   127→        <p className="text-xs font-medium text-muted-warm tabular-nums">
+   128→          {formatTk(line.price)} each
+   129→        </p>
+   130→      </div>
+   131→      <div className="flex items-center overflow-hidden rounded-full border-2 border-ink bg-white">
+   132→        <button
+   133→          type="button"
+   134→          onClick={() => onDec(line.id)}
+   135→          className="flex h-8 w-8 items-center justify-center text-ink transition-colors hover:bg-pink hover:text-white"
+   136→          aria-label={`Remove one ${line.name}`}
+   137→        >
+   138→          <Minus className="h-3.5 w-3.5" aria-hidden />
+   139→        </button>
+   140→        <span className="min-w-7 text-center text-sm font-bold tabular-nums">{line.qty}</span>
+   141→        <button
+   142→          type="button"
+   143→          onClick={() => onInc(line.id)}
+   144→          className="flex h-8 w-8 items-center justify-center text-ink transition-colors hover:bg-lime"
+   145→          aria-label={`Add one more ${line.name}`}
+   146→        >
+   147→          <Plus className="h-3.5 w-3.5" aria-hidden />
+   148→        </button>
+   149→      </div>
+   150→      <p className={cn("font-bold tabular-nums", compact ? "w-14 text-right text-sm" : "w-16 text-right text-sm")}>
+   151→        {formatTk(line.price * line.qty)}
+   152→      </p>
+   153→      <button
+   154→        type="button"
+   155→        onClick={() => onRemove(line.id)}
+   156→        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-red-50 hover:text-red-600"
+   157→        aria-label={`Remove ${line.name} from order`}
+   158→      >
+   159→        <Trash2 className="h-4 w-4" aria-hidden />
+   160→      </button>
+   161→    </li>
+   162→  );
+   163→}
+   164→
+   165→/* ------------------------------ Main component ---------------------------- */
+   166→
+   167→export function OrderPageContent() {
+   168→  const lines = useCart((s) => s.lines);
+   169→  const increment = useCart((s) => s.increment);
+   170→  const decrement = useCart((s) => s.decrement);
+   171→  const remove = useCart((s) => s.remove);
+   172→  const clear = useCart((s) => s.clear);
+   173→
+   174→  const [step, setStep] = React.useState<Step>(1);
+   175→  const [activeCat, setActiveCat] = React.useState(menu[0].id);
+   176→  const [name, setName] = React.useState("");
+   177→  const [phone, setPhone] = React.useState("");
+   178→  const [fulfillment, setFulfillment] = React.useState<Fulfillment>("pickup");
+   179→  const [address, setAddress] = React.useState("");
+   180→  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
+   181→  const [trxId, setTrxId] = React.useState("");
+   182→  const [pickupTime, setPickupTime] = React.useState<string>(pickupOptions[0]);
+   183→  const [notes, setNotes] = React.useState("");
+   184→  const [submitting, setSubmitting] = React.useState(false);
+   185→  const [success, setSuccess] = React.useState<OrderSuccess | null>(null);
+   186→  const [touched, setTouched] = React.useState<{
+   187→    name?: boolean;
+   188→    phone?: boolean;
+   189→    address?: boolean;
+   190→    trxId?: boolean;
+   191→  }>({});
+   192→
+   193→  const subtotal = cartSubtotal(lines);
+   194→  const itemCount = lines.reduce((n, l) => n + l.qty, 0);
+   195→  const nameValid = name.trim().length >= 2;
+   196→  const phoneValid = validatePhone(phone);
+   197→  const addressValid = address.trim().length >= 10;
+   198→  const needsAddress = fulfillment === "delivery";
+   199→  const normalizedTrx = trxId.trim().toUpperCase();
+   200→  const trxIdValid = /^[A-Z0-9]{6,15}$/.test(normalizedTrx);
+   201→  const needsTrx = paymentMethod !== "cash";
+   202→  const canSubmit =
+   203→    lines.length > 0 &&
+   204→    nameValid &&
+   205→    phoneValid &&
+   206→    (!needsAddress || addressValid) &&
+   207→    (!needsTrx || trxIdValid) &&
+   208→    !submitting;
+   209→
+   210→  const category = menu.find((c) => c.id === activeCat) ?? menu[0];
+   211→
+   212→  function goToStep(next: Step) {
+   213→    setStep(next);
+   214→    window.scrollTo({ top: 0, behavior: "smooth" });
+   215→  }
+   216→
+   217→  async function placeOrder() {
+   218→    setTouched({ name: true, phone: true, address: true, trxId: true });
+   219→    if (!canSubmit) {
+   220→      if (lines.length === 0) toast.error("Add at least one item to your order first.");
+   221→      else if (!nameValid) toast.error("Please tell us your name.");
+   222→      else if (!phoneValid) toast.error("Please enter a valid Bangladeshi phone number.");
+   223→      else if (needsAddress && !addressValid)
+   224→        toast.error("Please enter your full delivery address (house, road, area).");
+   225→      else if (needsTrx && !trxIdValid)
+   226→        toast.error("Please enter the TrxID from your bKash/Nagad transaction.");
+   227→      return;
+   228→    }
+   229→    setSubmitting(true);
+   230→    try {
+   231→      const res = await fetch("/api/orders", {
+   232→        method: "POST",
+   233→        headers: { "Content-Type": "application/json" },
+   234→        body: JSON.stringify({
+   235→          customerName: name.trim(),
+   236→          phone: phone.trim(),
+   237→          fulfillment,
+   238→          address: needsAddress ? address.trim() : undefined,
+   239→          pickupTime,
+   240→          paymentMethod,
+   241→          trxId: needsTrx ? normalizedTrx : undefined,
+   242→          notes: notes.trim() || undefined,
+   243→          items: lines.map((l) => ({ id: l.id, qty: l.qty })),
+   244→        }),
+   245→      });
+   246→      const data = await res.json();
+   247→      if (!res.ok || !data.success) {
+   248→        throw new Error(data.error || "Could not place the order.");
+   249→      }
+   250→      setSuccess({
+   251→        orderNumber: data.orderNumber,
+   252→        total: data.total,
+   253→        whatsappUrl: data.whatsappUrl,
+   254→        lines,
+   255→        name: name.trim(),
+   256→        fulfillment,
+   257→        address: needsAddress ? address.trim() : undefined,
+   258→        paymentMethod,
+   259→        trxId: needsTrx ? normalizedTrx : undefined,
+   260→      });
+   261→      clear();
+   262→      window.scrollTo({ top: 0, behavior: "smooth" });
+   263→    } catch (err) {
+   264→      toast.error(err instanceof Error ? err.message : "Could not place the order. Please try again.");
+   265→    } finally {
+   266→      setSubmitting(false);
+   267→    }
+   268→  }
+   269→
+   270→  /* ------------------------------ SUCCESS VIEW ----------------------------- */
+   271→  if (success) {
+   272→    return (
+   273→      <div className="mx-auto max-w-2xl px-4 pb-24 pt-24 sm:px-6 md:pt-28">
+   274→        <div className="mb-6">
+   275→          <CheckoutSteps step={2} done />
+   276→        </div>
+   277→        <motion.div
+   278→          initial={{ opacity: 0, y: 20 }}
+   279→          animate={{ opacity: 1, y: 0 }}
+   280→          className="rounded-3xl border-[3px] border-ink bg-white p-6 text-center shadow-[8px_8px_0_0_var(--color-ink)] sm:p-10"
+   281→        >
+   282→          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-ink bg-lime shadow-[3px_3px_0_0_var(--color-ink)]">
+   283→            <Check className="h-8 w-8 text-ink" strokeWidth={3} aria-hidden />
+   284→          </span>
+   285→          <h1 className="mt-5 font-display text-3xl font-bold sm:text-4xl">
+   286→            Order placed!
+   287→          </h1>
+   288→          <p className="mt-2 text-muted-warm">
+   289→            Thanks {success.name.split(" ")[0]}. Your order number is{" "}
+   290→            <span className="font-display font-bold text-pink">{success.orderNumber}</span>,
+   291→            total {formatTk(success.total)}.
+   292→          </p>
+   293→
+   294→          {/* Item recap */}
+   295→          <ul className="mt-6 space-y-2 rounded-2xl border-2 border-dashed border-ink/25 bg-cream p-4 text-left">
+   296→            {success.lines.map((l) => (
+   297→              <li key={l.id} className="flex items-center justify-between gap-3 text-sm">
+   298→                <span className="font-semibold text-ink">
+   299→                  {l.qty} × {l.name}
+   300→                </span>
+   301→                <span className="font-bold tabular-nums text-ink/80">{formatTk(l.price * l.qty)}</span>
+   302→              </li>
+   303→            ))}
+   304→            {success.fulfillment === "delivery" && success.address && (
+   305→              <li className="flex items-start justify-between gap-3 border-t-2 border-dashed border-ink/20 pt-2 text-sm">
+   306→                <span className="shrink-0 font-semibold text-ink">Deliver to</span>
+   307→                <span className="max-w-[70%] text-right text-ink/80">{success.address}</span>
+   308→              </li>
+   309→            )}
+   310→            <li className="flex items-start justify-between gap-3 border-t-2 border-dashed border-ink/20 pt-2 text-sm">
+   311→              <span className="shrink-0 font-semibold text-ink">Payment</span>
+   312→              <span className="max-w-[70%] text-right text-ink/80">
+   313→                {success.paymentMethod === "cash"
+   314→                  ? success.fulfillment === "delivery"
+   315→                    ? "Cash on delivery"
+   316→                    : "Cash at counter"
+   317→                  : success.paymentMethod === "bkash"
+   318→                    ? `bKash · TrxID ${success.trxId} (we verify it before starting your order)`
+   319→                    : `Nagad · TrxID ${success.trxId} (we verify it before starting your order)`}
+   320→              </span>
+   321→            </li>
+   322→            <li className="flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-2 text-sm">
+   323→              <span className="font-bold text-ink">
+   324→                Total{" "}
+   325→                {success.paymentMethod === "cash"
+   326→                  ? `(pay on ${success.fulfillment === "delivery" ? "delivery" : "pickup"})`
+   327→                  : `(paid via ${success.paymentMethod === "bkash" ? "bKash" : "Nagad"})`}
+   328→              </span>
+   329→              <span className="font-display font-bold tabular-nums text-pink">
+   330→                {formatTk(success.total)}
+   331→              </span>
+   332→            </li>
+   333→          </ul>
+   334→
+   335→          <div className="mt-5 rounded-2xl border-2 border-dashed border-ink/30 bg-cream p-4 text-left">
+   336→            <p className="flex items-start gap-2 text-sm font-semibold text-ink">
+   337→              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-orange" aria-hidden />
+   338→              One last step: tap the WhatsApp button below so the shop receives your
+   339→              order instantly. You can also call us to confirm.
+   340→            </p>
+   341→          </div>
+   342→
+   343→          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+   344→            <Button
+   345→              asChild
+   346→              className="min-h-12 rounded-full bg-[#25D366] px-7 text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+   347→            >
+   348→              <a href={success.whatsappUrl} target="_blank" rel="noopener noreferrer">
+   349→                Send order on WhatsApp
+   350→              </a>
+   351→            </Button>
+   352→            <Button
+   353→              asChild
+   354→              variant="outline"
+   355→              className="min-h-12 rounded-full border-2 border-ink bg-white px-7 text-base font-semibold text-ink"
+   356→            >
+   357→              <a href={`tel:${siteConfig.phoneE164}`} onClick={() => trackEvent("phone_click")}>
+   358→                <Phone className="mr-1 h-4 w-4" aria-hidden />
+   359→                Call the shop
+   360→              </a>
+   361→            </Button>
+   362→          </div>
+   363→
+   364→          <button
+   365→            type="button"
+   366→            onClick={() => {
+   367→              setSuccess(null);
+   368→              setStep(1);
+   369→              setName("");
+   370→              setPhone("");
+   371→              setFulfillment("pickup");
+   372→              setAddress("");
+   373→              setPaymentMethod("cash");
+   374→              setTrxId("");
+   375→              setNotes("");
+   376→              setTouched({});
+   377→            }}
+   378→            className="mt-6 text-sm font-semibold text-pink underline-offset-4 hover:underline"
+   379→          >
+   380→            Start a new order
+   381→          </button>
+   382→        </motion.div>
+   383→      </div>
+   384→    );
+   385→  }
+   386→
+   387→  /* ------------------------------- STEP 2: CHECKOUT ------------------------ */
+   388→  if (step === 2) {
+   389→    return (
+   390→      <div className="mx-auto max-w-6xl px-4 pb-32 pt-24 sm:px-6 md:pb-24 md:pt-28">
+   391→        {/* Compact header */}
+   392→        <div className="flex flex-wrap items-center justify-between gap-3">
+   393→          <div>
+   394→            <button
+   395→              type="button"
+   396→              onClick={() => goToStep(1)}
+   397→              className="mb-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-muted-warm transition-colors hover:bg-white hover:text-ink"
+   398→            >
+   399→              <ArrowLeft className="h-4 w-4" aria-hidden />
+   400→              Back to items
+   401→            </button>
+   402→            <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+   403→              Checkout
+   404→            </h1>
+   405→          </div>
+   406→          <CheckoutSteps step={2} />
+   407→        </div>
+   408→
+   409→        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-8">
+   410→          {/* Details form */}
+   411→          <div className="space-y-6">
+   412→            <section
+   413→              aria-labelledby="details-heading"
+   414→              className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
+   415→            >
+   416→              <h2 id="details-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+   417→                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pink font-display text-xs font-bold text-white">
+   418→                  1
+   419→                </span>
+   420→                Your details
+   421→              </h2>
+   422→              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+   423→                <div>
+   424→                  <Label htmlFor="order-name" className="text-sm font-semibold">
+   425→                    Name
+   426→                  </Label>
+   427→                  <Input
+   428→                    id="order-name"
+   429→                    value={name}
+   430→                    onChange={(e) => setName(e.target.value)}
+   431→                    onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+   432→                    placeholder="e.g. Rahim Ahmed"
+   433→                    autoComplete="name"
+   434→                    maxLength={60}
+   435→                    required
+   436→                    aria-invalid={touched.name && !nameValid}
+   437→                    className="mt-1.5 h-12 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   438→                  />
+   439→                  {touched.name && !nameValid && (
+   440→                    <p className="mt-1 text-xs font-medium text-red-600">
+   441→                      Please enter your name (at least 2 characters).
+   442→                    </p>
+   443→                  )}
+   444→                </div>
+   445→                <div>
+   446→                  <Label htmlFor="order-phone" className="text-sm font-semibold">
+   447→                    Phone number
+   448→                  </Label>
+   449→                  <Input
+   450→                    id="order-phone"
+   451→                    type="tel"
+   452→                    inputMode="tel"
+   453→                    value={phone}
+   454→                    onChange={(e) => setPhone(e.target.value)}
+   455→                    onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
+   456→                    placeholder="01XXXXXXXXX"
+   457→                    autoComplete="tel"
+   458→                    maxLength={16}
+   459→                    required
+   460→                    aria-invalid={touched.phone && !phoneValid}
+   461→                    className="mt-1.5 h-12 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   462→                  />
+   463→                  {touched.phone && !phoneValid && (
+   464→                    <p className="mt-1 text-xs font-medium text-red-600">
+   465→                      Enter a valid BD number, e.g. 01723399638.
+   466→                    </p>
+   467→                  )}
+   468→                </div>
+   469→              </div>
+   470→            </section>
+   471→
+   472→            <section
+   473→              aria-labelledby="fulfillment-heading"
+   474→              className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
+   475→            >
+   476→              <h2 id="fulfillment-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+   477→                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan font-display text-xs font-bold text-ink">
+   478→                  2
+   479→                </span>
+   480→                Pickup or delivery
+   481→              </h2>
+   482→
+   483→              {/* Fulfillment toggle */}
+   484→              <div className="mt-4 grid grid-cols-2 gap-3" role="group" aria-label="How do you want your order">
+   485→                {(
+   486→                  [
+   487→                    {
+   488→                      value: "pickup" as const,
+   489→                      icon: Store,
+   490→                      title: "Pickup",
+   491→                      sub: "Collect from the shop",
+   492→                    },
+   493→                    {
+   494→                      value: "delivery" as const,
+   495→                      icon: Bike,
+   496→                      title: "Delivery",
+   497→                      sub: "We bring it to you",
+   498→                    },
+   499→                  ] as const
+   500→                ).map(({ value, icon: Icon, title, sub }) => {
+   501→                  const active = fulfillment === value;
+   502→                  return (
+   503→                    <button
+   504→                      key={value}
+   505→                      type="button"
+   506→                      aria-pressed={active}
+   507→                      onClick={() => setFulfillment(value)}
+   508→                      className={cn(
+   509→                        "flex min-h-11 flex-col items-start gap-1 rounded-2xl border-2 p-3.5 text-left transition-all",
+   510→                        active
+   511→                          ? "border-ink bg-ink text-cream shadow-[3px_3px_0_0_rgba(32,23,25,0.25)]"
+   512→                          : "border-ink/20 bg-cream text-ink hover:border-ink"
+   513→                      )}
+   514→                    >
+   515→                      <Icon className={cn("h-5 w-5", active ? "text-lime" : "text-pink")} aria-hidden />
+   516→                      <span className="text-sm font-bold leading-tight">{title}</span>
+   517→                      <span className={cn("text-xs leading-tight", active ? "text-cream/70" : "text-muted-warm")}>
+   518→                        {sub}
+   519→                      </span>
+   520→                    </button>
+   521→                  );
+   522→                })}
+   523→              </div>
+   524→
+   525→              {/* Delivery address */}
+   526→              {fulfillment === "delivery" && (
+   527→                <div className="mt-4">
+   528→                  <Label htmlFor="order-address" className="text-sm font-semibold">
+   529→                    Delivery address <span className="text-red-600">*</span>
+   530→                  </Label>
+   531→                  <Textarea
+   532→                    id="order-address"
+   533→                    value={address}
+   534→                    onChange={(e) => setAddress(e.target.value)}
+   535→                    onBlur={() => setTouched((t) => ({ ...t, address: true }))}
+   536→                    placeholder="House / flat, road, area, landmark. e.g. 12/3 College Road, opposite the bank, Sreemangal"
+   537→                    maxLength={200}
+   538→                    required
+   539→                    aria-invalid={touched.address && !addressValid}
+   540→                    className="mt-1.5 min-h-20 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   541→                  />
+   542→                  {touched.address && !addressValid ? (
+   543→                    <p className="mt-1 text-xs font-medium text-red-600">
+   544→                      Please enter your full address (house, road, area) so the rider can find you.
+   545→                    </p>
+   546→                  ) : (
+   547→                    <p className="mt-1 text-xs text-muted-warm">
+   548→                      Our rider calls this number on the way. Delivery area and any charge are confirmed on call.
+   549→                    </p>
+   550→                  )}
+   551→                </div>
+   552→              )}
+   553→
+   554→              {/* Time */}
+   555→              <div className="mt-4">
+   556→                <Label htmlFor="order-time" className="text-sm font-semibold">
+   557→                  {fulfillment === "delivery" ? "Preferred time" : "Pickup time"}
+   558→                </Label>
+   559→                <select
+   560→                  id="order-time"
+   561→                  value={pickupTime}
+   562→                  onChange={(e) => setPickupTime(e.target.value)}
+   563→                  className="mt-1.5 h-12 w-full rounded-xl border-2 border-ink/25 bg-cream px-3 text-sm font-medium text-ink focus:border-pink focus:outline-none"
+   564→                >
+   565→                  {pickupOptions.map((opt) => (
+   566→                    <option key={opt} value={opt}>
+   567→                      {opt}
+   568→                    </option>
+   569→                  ))}
+   570→                </select>
+   571→                {fulfillment === "delivery" && (
+   572→                  <p className="mt-1 text-xs text-muted-warm">
+   573→                    Preferred time for delivery. We call to confirm the exact window.
+   574→                  </p>
+   575→                )}
+   576→              </div>
+   577→
+   578→              {/* Notes */}
+   579→              <div className="mt-4">
+   580→                <Label htmlFor="order-notes" className="text-sm font-semibold">
+   581→                  Notes <span className="font-normal text-muted-warm">(optional)</span>
+   582→                </Label>
+   583→                <Textarea
+   584→                  id="order-notes"
+   585→                  value={notes}
+   586→                  onChange={(e) => setNotes(e.target.value)}
+   587→                  placeholder="Extra Nutella? Less sweet? Tell us here."
+   588→                  maxLength={400}
+   589→                  className="mt-1.5 min-h-20 border-2 border-ink/25 bg-cream focus-visible:ring-pink"
+   590→                />
+   591→              </div>
+   592→            </section>
+   593→
+   594→            {/* Payment */}
+   595→            <section
+   596→              aria-labelledby="payment-heading"
+   597→              className="rounded-3xl border-2 border-ink/15 bg-white p-5 sm:p-6"
+   598→            >
+   599→              <h2 id="payment-heading" className="flex items-center gap-2 font-display text-lg font-bold">
+   600→                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple text-white font-display text-xs font-bold">
+   601→                  3
+   602→                </span>
+   603→                Payment
+   604→              </h2>
+   605→
+   606→              <div className="mt-4 grid gap-3" role="group" aria-label="Payment method">
+   607→                {(
+   608→                  [
+   609→                    {
+   610→                      value: "cash" as const,
+   611→                      icon: Wallet,
+   612→                      title: "Cash",
+   613→                      sub:
+   614→                        fulfillment === "delivery"
+   615→                          ? "Pay the rider on delivery"
+   616→                          : "Pay at the counter",
+   617→                    },
+   618→                    {
+   619→                      value: "bkash" as const,
+   620→                      icon: Smartphone,
+   621→                      title: "bKash",
+   622→                      sub: "Send money, then enter TrxID",
+   623→                    },
+   624→                    {
+   625→                      value: "nagad" as const,
+   626→                      icon: Smartphone,
+   627→                      title: "Nagad",
+   628→                      sub: "Send money, then enter TrxID",
+   629→                    },
+   630→                  ] as const
+   631→                ).map(({ value, icon: Icon, title, sub }) => {
+   632→                  const active = paymentMethod === value;
+   633→                  return (
+   634→                    <button
+   635→                      key={value}
+   636→                      type="button"
+   637→                      aria-pressed={active}
+   638→                      onClick={() => setPaymentMethod(value)}
+   639→                      className={cn(
+   640→                        "flex min-h-11 items-center gap-3.5 rounded-2xl border-2 p-3.5 text-left transition-all",
+   641→                        active
+   642→                          ? "border-ink bg-ink text-cream shadow-[3px_3px_0_0_rgba(32,23,25,0.25)]"
+   643→                          : "border-ink/20 bg-cream text-ink hover:border-ink"
+   644→                      )}
+   645→                    >
+   646→                      <Icon className={cn("h-5 w-5 shrink-0", active ? "text-lime" : "text-pink")} aria-hidden />
+   647→                      <span className="min-w-0">
+   648→                        <span className="block text-sm font-bold leading-tight">{title}</span>
+   649→                        <span className={cn("block text-xs leading-tight", active ? "text-cream/70" : "text-muted-warm")}>
+   650→                          {sub}
+   651→                        </span>
+   652→                      </span>
+   653→                      {active && <Check className="ml-auto h-5 w-5 shrink-0 text-lime" strokeWidth={3} aria-hidden />}
+   654→                    </button>
+   655→                  );
+   656→                })}
+   657→              </div>
+   658→
+   659→              {/* Mobile money instructions + TrxID */}
+   660→              {paymentMethod !== "cash" && (
+   661→                <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 bg-cream p-4">
+   662→                  <p className="text-sm leading-relaxed text-ink">
+   663→                    Send{" "}
+   664→                    <strong className="font-display text-pink tabular-nums">{formatTk(subtotal)}</strong> to{" "}
+   665→                    <strong className="font-display">
+   666→                      {paymentMethod === "bkash"
+   667→                        ? siteConfig.payments.bkashNumber
+   668→                        : siteConfig.payments.nagadNumber}
+   669→                    </strong>{" "}
+   670→                    ({paymentMethod === "bkash" ? "bKash" : "Nagad"} app, Send Money), then enter the
+   671→                    TrxID below. We verify it before making your order.
+   672→                  </p>
+   673→                  <div className="mt-3">
+   674→                    <Label htmlFor="order-trxid" className="text-sm font-semibold">
+   675→                      Transaction ID (TrxID) <span className="text-red-600">*</span>
+   676→                    </Label>
+   677→                    <Input
+   678→                      id="order-trxid"
+   679→                      value={trxId}
+   680→                      onChange={(e) => setTrxId(e.target.value)}
+   681→                      onBlur={() => setTouched((t) => ({ ...t, trxId: true }))}
+   682→                      placeholder="e.g. 8A5KD2XRQ9"
+   683→                      maxLength={15}
+   684→                      autoCapitalize="characters"
+   685→                      autoCorrect="off"
+   686→                      spellCheck={false}
+   687→                      required
+   688→                      aria-invalid={touched.trxId && !trxIdValid}
+   689→                      className="mt-1.5 h-12 border-2 border-ink/25 bg-white font-display tracking-wider uppercase focus-visible:ring-pink"
+   690→                    />
+   691→                    {touched.trxId && !trxIdValid ? (
+   692→                      <p className="mt-1 text-xs font-medium text-red-600">
+   693→                        Enter the TrxID (6-15 letters/numbers) from your {paymentMethod === "bkash" ? "bKash" : "Nagad"} transaction history.
+   694→                      </p>
+   695→                    ) : (
+   696→                      <p className="mt-1 text-xs text-muted-warm">
+   697→                        Find it in your {paymentMethod === "bkash" ? "bKash" : "Nagad"} app under recent transactions.
+   698→                      </p>
+   699→                    )}
+   700→                  </div>
+   701→                </div>
+   702→              )}
+   703→            </section>
+   704→
+   705→            {/* Live recap of the two choices */}
+   706→            <section
+   707→              aria-label="Your choices"
+   708→              className="grid gap-3 rounded-3xl border-2 border-dashed border-ink/25 bg-white/60 p-5 sm:grid-cols-2 sm:p-6"
+   709→            >
+   710→              <div className="flex items-start gap-3">
+   711→                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-lime-soft">
+   712→                  {fulfillment === "pickup" ? (
+   713→                    <Store className="h-5 w-5 text-ink" aria-hidden />
+   714→                  ) : (
+   715→                    <Bike className="h-5 w-5 text-ink" aria-hidden />
+   716→                  )}
+   717→                </span>
+   718→                <div className="min-w-0">
+   719→                  <p className="text-sm font-bold">
+   720→                    {fulfillment === "pickup" ? "Pickup from the shop" : "Delivery to you"}
+   721→                  </p>
+   722→                  <p className="mt-0.5 text-xs leading-relaxed text-muted-warm">
+   723→                    {fulfillment === "pickup"
+   724→                      ? `${siteConfig.address.street}, ${siteConfig.address.locality} ${siteConfig.address.postalCode}`
+   725→                      : address.trim()
+   726→                        ? address.trim()
+   727→                        : "Add your address above"}
+   728→                  </p>
+   729→                </div>
+   730→              </div>
+   731→              <div className="flex items-start gap-3">
+   732→                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-orange-soft">
+   733→                  {paymentMethod === "cash" ? (
+   734→                    <Wallet className="h-5 w-5 text-ink" aria-hidden />
+   735→                  ) : (
+   736→                    <Smartphone className="h-5 w-5 text-ink" aria-hidden />
+   737→                  )}
+   738→                </span>
+   739→                <div className="min-w-0">
+   740→                  <p className="text-sm font-bold">
+   741→                    {paymentMethod === "cash"
+   742→                      ? fulfillment === "delivery"
+   743→                        ? "Cash on delivery"
+   744→                        : "Pay at the counter"
+   745→                      : paymentMethod === "bkash"
+   746→                        ? "bKash · TrxID sent for verification"
+   747→                        : "Nagad · TrxID sent for verification"}
+   748→                  </p>
+   749→                  <p className="mt-0.5 text-xs leading-relaxed text-muted-warm">
+   750→                    {paymentMethod === "cash"
+   751→                      ? "No advance payment needed."
+   752→                      : "We verify your TrxID before starting the order."}
+   753→                  </p>
+   754→                </div>
+   755→              </div>
+   756→            </section>
+   757→
+   758→            {/* Order summary (mobile / tablet) */}
+   759→            <section
+   760→              aria-labelledby="summary-heading-mobile"
+   761→              className="rounded-3xl border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)] lg:hidden"
+   762→            >
+   763→              <h2 id="summary-heading-mobile" className="flex items-center gap-2 font-display text-lg font-bold">
+   764→                <ShoppingBag className="h-5 w-5 text-pink" aria-hidden />
+   765→                Order summary
+   766→                {itemCount > 0 && (
+   767→                  <span className="rounded-full bg-pink px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+   768→                    {itemCount}
+   769→                  </span>
+   770→                )}
+   771→              </h2>
+   772→              {lines.length === 0 ? (
+   773→                <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 p-6 text-center">
+   774→                  <p className="text-sm font-medium text-muted-warm">
+   775→                    Your order is empty.{" "}
+   776→                    <button
+   777→                      type="button"
+   778→                      onClick={() => goToStep(1)}
+   779→                      className="font-bold text-pink underline-offset-2 hover:underline"
+   780→                    >
+   781→                      Add some treats
+   782→                    </button>
+   783→                  </p>
+   784→                </div>
+   785→              ) : (
+   786→                <>
+   787→                  <ul className="mt-4 max-h-80 space-y-2.5 overflow-y-auto pr-1 nice-scrollbar">
+   788→                    {lines.map((line) => (
+   789→                      <CartLineRow
+   790→                        key={line.id}
+   791→                        line={line}
+   792→                        onInc={increment}
+   793→                        onDec={decrement}
+   794→                        onRemove={remove}
+   795→                        compact
+   796→                      />
+   797→                    ))}
+   798→                  </ul>
+   799→                  <div className="mt-4 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
+   800→                    <span className="text-sm font-semibold text-muted-warm">Total</span>
+   801→                    <span className="font-display text-2xl font-bold tabular-nums">
+   802→                      {formatTk(subtotal)}
+   803→                    </span>
+   804→                  </div>
+   805→                  <Button
+   806→                    onClick={placeOrder}
+   807→                    disabled={submitting || lines.length === 0}
+   808→                    className="mt-4 h-14 w-full rounded-2xl bg-orange text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:pointer-events-none disabled:opacity-50"
+   809→                  >
+   810→                    {submitting ? (
+   811→                      <>
+   812→                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+   813→                        Placing order...
+   814→                      </>
+   815→                    ) : (
+   816→                      <>
+   817→                        Place order
+   818→                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+   819→                      </>
+   820→                    )}
+   821→                  </Button>
+   822→                </>
+   823→              )}
+   824→            </section>
+   825→          </div>
+   826→
+   827→          {/* Order summary (desktop) */}
+   828→          <aside aria-label="Order summary" className="hidden lg:block">
+   829→            <div className="sticky top-24 rounded-3xl border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)]">
+   830→              <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+   831→                <ShoppingBag className="h-5 w-5 text-pink" aria-hidden />
+   832→                Order summary
+   833→                {itemCount > 0 && (
+   834→                  <span className="rounded-full bg-pink px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+   835→                    {itemCount}
+   836→                  </span>
+   837→                )}
+   838→              </h2>
+   839→              {lines.length === 0 ? (
+   840→                <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 p-6 text-center">
+   841→                  <p className="text-sm font-medium text-muted-warm">
+   842→                    Your order is empty.{" "}
+   843→                    <button
+   844→                      type="button"
+   845→                      onClick={() => goToStep(1)}
+   846→                      className="font-bold text-pink underline-offset-2 hover:underline"
+   847→                    >
+   848→                      Add some treats
+   849→                    </button>
+   850→                  </p>
+   851→                </div>
+   852→              ) : (
+   853→                <>
+   854→                  <ul className="mt-4 max-h-96 space-y-2.5 overflow-y-auto pr-1 nice-scrollbar">
+   855→                    {lines.map((line) => (
+   856→                      <CartLineRow
+   857→                        key={line.id}
+   858→                        line={line}
+   859→                        onInc={increment}
+   860→                        onDec={decrement}
+   861→                        onRemove={remove}
+   862→                      />
+   863→                    ))}
+   864→                  </ul>
+   865→                  <div className="mt-4 space-y-1.5 border-t-2 border-dashed border-ink/20 pt-3 text-sm">
+   866→                    <div className="flex items-center justify-between text-muted-warm">
+   867→                      <span>Items</span>
+   868→                      <span className="tabular-nums">{itemCount}</span>
+   869→                    </div>
+   870→                    <div className="flex items-center justify-between">
+   871→                      <span className="font-semibold">Total</span>
+   872→                      <span className="font-display text-2xl font-bold tabular-nums">
+   873→                        {formatTk(subtotal)}
+   874→                      </span>
+   875→                    </div>
+   876→                  </div>
+   877→                  <Button
+   878→                    onClick={placeOrder}
+   879→                    disabled={submitting || lines.length === 0}
+   880→                    className="mt-4 h-14 w-full rounded-2xl bg-orange text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:pointer-events-none disabled:opacity-50"
+   881→                  >
+   882→                    {submitting ? (
+   883→                      <>
+   884→                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+   885→                        Placing order...
+   886→                      </>
+   887→                    ) : (
+   888→                      <>
+   889→                        Place order
+   890→                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+   891→                      </>
+   892→                    )}
+   893→                  </Button>
+   894→                  <p className="mt-3 text-center text-xs leading-relaxed text-muted-warm">
+   895→                    After placing, we hand your order to the shop over WhatsApp so
+   896→                    nothing gets lost.
+   897→                  </p>
+   898→                </>
+   899→              )}
+   900→            </div>
+   901→          </aside>
+   902→        </div>
+   903→      </div>
+   904→    );
+   905→  }
+   906→
+   907→  /* ------------------------------- STEP 1: BROWSE -------------------------- */
+   908→  return (
+   909→    <div className="mx-auto max-w-6xl px-4 pb-36 pt-24 sm:px-6 md:pb-28 md:pt-28 lg:pb-20">
+   910→      {/* Compact header */}
+   911→      <div className="flex flex-wrap items-center justify-between gap-3">
+   912→        <div>
+   913→          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+   914→            Build your order
+   915→          </h1>
+   916→          <p className="mt-1.5 text-sm text-muted-warm sm:text-base">
+   917→            Pick your treats, then checkout. Pickup or delivery, ready in 15-25 min.
+   918→          </p>
+   919→        </div>
+   920→        <CheckoutSteps step={1} />
+   921→      </div>
+   922→
+   923→      {/* Trust strip */}
+   924→      <div className="mt-5 flex flex-wrap gap-2.5">
+   925→        {[ 
+   926→          { icon: Clock, label: "Ready in 15-25 min" },
+   927→          { icon: Wallet, label: "Cash, bKash or Nagad" },
+   928→          { icon: MapPin, label: "Pickup or delivery" },
+   929→        ].map(({ icon: Icon, label }) => (
+   930→          <span
+   931→            key={label}
+   932→            className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink/10 bg-white px-3.5 py-1.5 text-xs font-bold text-ink"
+   933→          >
+   934→            <Icon className="h-3.5 w-3.5 text-pink" aria-hidden />
+   935→            {label}
+   936→          </span>
+   937→        ))}
+   938→      </div>
+   939→
+   940→      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
+   941→        {/* Menu browser */}
+   942→        <section aria-label="Menu items" className="min-w-0">
+   943→          <div
+   944→            role="tablist"
+   945→            aria-label="Menu categories"
+   946→            className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+   947→          >
+   948→            {menu.map((cat) => (
+   949→              <button
+   950→                key={cat.id}
+   951→                role="tab"
+   952→                aria-selected={activeCat === cat.id}
+   953→                onClick={() => setActiveCat(cat.id)}
+   954→                className={cn(
+   955→                  "min-h-11 whitespace-nowrap rounded-full border-2 px-4 text-sm font-bold transition-all",
+   956→                  activeCat === cat.id
+   957→                    ? "border-ink bg-ink text-cream shadow-[2.5px_2.5px_0_0_rgba(32,23,25,0.25)]"
+   958→                    : "border-ink/20 bg-white text-ink hover:border-ink"
+   959→                )}
+   960→              >
+   961→                {cat.label}
+   962→                <span className="ml-2 rounded-full bg-ink/10 px-1.5 py-0.5 text-[0.65rem] tabular-nums">
+   963→                  {cat.items.length}
+   964→                </span>
+   965→              </button>
+   966→            ))}
+   967→          </div>
+   968→
+   969→          <AnimatePresence mode="wait">
+   970→            <motion.ul
+   971→              key={category.id}
+   972→              initial={{ opacity: 0, y: 8 }}
+   973→              animate={{ opacity: 1, y: 0 }}
+   974→              exit={{ opacity: 0, y: -8 }}
+   975→              transition={{ duration: 0.2 }}
+   976→              className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3"
+   977→              aria-live="polite"
+   978→            >
+   979→              {category.items.map((item, i) => (
+   980→                <motion.li
+   981→                  key={item.id}
+   982→                  initial={{ opacity: 0, y: 10 }}
+   983→                  animate={{ opacity: 1, y: 0 }}
+   984→                  transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.3) }}
+   985→                >
+   986→                  <ProductCard
+   987→                    item={item}
+   988→                    category={category.label}
+   989→                    className="h-full"
+   990→                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 46vw, 30vw"
+   991→                    priority={i < 4}
+   992→                  />
+   993→                </motion.li>
+   994→              ))}
+   995→            </motion.ul>
+   996→          </AnimatePresence>
+   997→        </section>
+   998→
+   999→        {/* Cart (desktop) */}
+  1000→        <aside aria-label="Your order" className="hidden lg:block">
+  1001→          <div className="sticky top-24 rounded-3xl border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)]">
+  1002→            <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+  1003→              <ShoppingBag className="h-5 w-5 text-pink" aria-hidden />
+  1004→              Your order
+  1005→              {itemCount > 0 && (
+  1006→                <span className="rounded-full bg-pink px-2.5 py-0.5 text-xs font-bold text-white tabular-nums">
+  1007→                  {itemCount}
+  1008→                </span>
+  1009→              )}
+  1010→            </h2>
+  1011→
+  1012→            {lines.length === 0 ? (
+  1013→              <div className="mt-4 rounded-2xl border-2 border-dashed border-ink/25 p-6 text-center">
+  1014→                <p className="text-sm font-medium text-muted-warm">
+  1015→                  Nothing here yet. Tap Add on anything that looks tasty.
+  1016→                </p>
+  1017→              </div>
+  1018→            ) : (
+  1019→              <>
+  1020→                <ul className="mt-4 max-h-96 space-y-2.5 overflow-y-auto pr-1 nice-scrollbar">
+  1021→                  {lines.map((line) => (
+  1022→                    <CartLineRow
+  1023→                      key={line.id}
+  1024→                      line={line}
+  1025→                      onInc={increment}
+  1026→                      onDec={decrement}
+  1027→                      onRemove={remove}
+  1028→                    />
+  1029→                  ))}
+  1030→                </ul>
+  1031→                <div className="mt-4 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
+  1032→                  <span className="text-sm font-semibold text-muted-warm">Subtotal</span>
+  1033→                  <span className="font-display text-2xl font-bold tabular-nums">
+  1034→                    {formatTk(subtotal)}
+  1035→                  </span>
+  1036→                </div>
+  1037→              </>
+  1038→            )}
+  1039→
+  1040→            <Button
+  1041→              onClick={() => {
+  1042→                if (lines.length === 0) {
+  1043→                  toast.error("Add at least one item to your order first.");
+  1044→                  return;
+  1045→                }
+  1046→                goToStep(2);
+  1047→              }}
+  1048→              className="mt-4 h-13 min-h-12 w-full rounded-2xl bg-orange text-base font-bold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+  1049→            >
+  1050→              Go to checkout
+  1051→              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+  1052→            </Button>
+  1053→            <p className="mt-3 text-center text-xs leading-relaxed text-muted-warm">
+  1054→              Prefer talking? Call{" "}
+  1055→              <a
+  1056→                href={`tel:${siteConfig.phoneE164}`}
+  1057→                onClick={() => trackEvent("phone_click")}
+  1058→                className="font-bold text-pink underline-offset-2 hover:underline"
+  1059→              >
+  1060→                {siteConfig.phoneDisplay}
+  1061→              </a>
+  1062→            </p>
+  1063→          </div>
+  1064→        </aside>
+  1065→      </div>
+  1066→
+  1067→      {/* Sticky cart bar (mobile + tablet, sits above the site action bar) */}
+  1068→      <AnimatePresence>
+  1069→        {lines.length > 0 && (
+  1070→          <motion.div
+  1071→            initial={{ y: 80, opacity: 0 }}
+  1072→            animate={{ y: 0, opacity: 1 }}
+  1073→            exit={{ y: 80, opacity: 0 }}
+  1074→            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+  1075→            className="fixed inset-x-0 bottom-[calc(3.75rem_+_env(safe-area-inset-bottom))] z-40 px-4 md:bottom-[env(safe-area-inset-bottom)] lg:hidden"
+  1076→          >
+  1077→            <button
+  1078→              type="button"
+  1079→              onClick={() => goToStep(2)}
+  1080→              className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 rounded-2xl border-[3px] border-ink bg-ink px-5 py-3.5 text-cream shadow-[4px_4px_0_0_rgba(32,23,25,0.3)] transition-transform active:scale-[0.98]"
+  1081→            >
+  1082→              <span className="flex items-center gap-2.5">
+  1083→                <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-pink text-white">
+  1084→                  <ShoppingBag className="h-4.5 w-4.5" aria-hidden />
+  1085→                  <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-ink bg-lime px-1 text-[0.6rem] font-bold text-ink tabular-nums">
+  1086→                    {itemCount}
+  1087→                  </span>
+  1088→                </span>
+  1089→                <span className="text-left">
+  1090→                  <span className="block text-xs font-medium text-cream/70">Your order</span>
+  1091→                  <span className="block font-display text-base font-bold tabular-nums">
+  1092→                    {formatTk(subtotal)}
+  1093→                  </span>
+  1094→                </span>
+  1095→              </span>
+  1096→              <span className="flex items-center gap-1.5 font-display text-sm font-bold text-lime">
+  1097→                Checkout
+  1098→                <ArrowRight className="h-4 w-4" aria-hidden />
+  1099→              </span>
+  1100→            </button>
+  1101→          </motion.div>
+  1102→        )}
+  1103→      </AnimatePresence>
+  1104→    </div>
+  1105→  );
+  1106→}
+  1107→

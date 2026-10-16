@@ -210,12 +210,16 @@ export function SiteFooter() {
             © {new Date().getFullYear()} {siteConfig.legalName}. All rights
             reserved.
           </p>
-          <p className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rounded-sm bg-lime"
-            />
-            Pressed fresh in Sreemangal, Bangladesh
+          <p>
+            Developed by{" "}
+            <a
+              href="https://tasbirkabir.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-cream/80 underline decoration-pink decoration-2 underline-offset-4 transition-colors hover:text-pink"
+            >
+              Tasbir Kabir
+            </a>
           </p>
         </div>
       </div>

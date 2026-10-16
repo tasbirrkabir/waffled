@@ -9,6 +9,7 @@ import { VisitSection } from "@/components/visit-section";
 import { FaqSection } from "@/components/faq-section";
 import { SiteFooter } from "@/components/site-footer";
 import { MobileActionBar } from "@/components/mobile-action-bar";
+import { FloatingCartPill } from "@/components/order/floating-cart-pill";
 import { siteConfig } from "@/content/site";
 
 const jsonLd = {
@@ -74,6 +75,9 @@ export default function Home() {
       </main>
       <SiteFooter />
       <MobileActionBar />
+      {/* Checkout popup: appears at the bottom as soon as someone adds an
+          item from the home page menu */}
+      <FloatingCartPill />
     </div>
   );
 }
