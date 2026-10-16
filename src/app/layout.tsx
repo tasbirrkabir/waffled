@@ -1,19 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
 
 export const metadata: Metadata = {
   title: "Waffled Sreemangal | Waffles, Shakes & Snacks in Sreemangal",
@@ -65,9 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${spaceGrotesk.variable} ${inter.variable} font-sans antialiased`}
-      >
+      <body className="font-sans antialiased">
         {children}
         <Toaster richColors position="bottom-center" closeButton />
       </body>

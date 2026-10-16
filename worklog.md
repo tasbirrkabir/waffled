@@ -188,3 +188,32 @@ Stage Summary:
 - New shared component: ProductCard (image + tags + add-to-cart) used across home/menu/order
 - Assets: 27 AI product photos in public/images/products/ (800px webp), generation + conversion scripts kept in scripts/
 - Note for future agents: Turbopack CSS may serve stale after globals.css edits -> restart dev server if CSS changes don't appear; keep dev server running via setsid nohup
+
+---
+Task ID: 5
+Agent: main (Z.ai Code)
+Task: Fix build error "Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'"
+
+Work Log:
+- Diagnosed: Turbopack's next/font/google pipeline fails to resolve its own internal font module for Space Grotesk in layout.tsx (GET / 500; network to fonts.googleapis.com fine, so it is a Turbopack pipeline bug, not connectivity)
+- Fix strategy: remove next/font/google entirely; self-host fonts with plain @font-face to bypass the Turbopack font pipeline
+- Downloaded latin variable fonts from Google Fonts CSS2 API (script parsed /* latin */ subset blocks; woff2 magic-byte verified):
+  public/fonts/space-grotesk-var.woff2 (22KB, wght 300-700, md5 87c506d8)
+  public/fonts/inter-var.woff2 (48KB, wght 100-900, md5 260c81a4)
+  (CSS2 API returns one variable file per family; deduped 6 downloads to 2 files)
+- layout.tsx: removed Space_Grotesk/Inter imports + variable classes; body now "font-sans antialiased"
+- globals.css: added two @font-face rules (font-display swap, /fonts/*.woff2) after imports; :root now defines --font-space-grotesk and --font-inter (replacing vars next/font used to inject via body class)
+- First attempt served PARTIAL CSS: @font-face present but :root block missing (Turbopack caught file between the two sequential edits of one MultiEdit) -> fonts registered but "unloaded", computed styles fell back to Tailwind default stack; confirmed via served chunk diff (167247 vs 167425 bytes)
+- Killed dev server, cleared .next, restarted: first single-fork setsid attempt died silently mid cold-compile; second attempt with double-fork subshell "( setsid nohup ... & )" came up clean (pattern per Task 4 note)
+- Full verification after restart:
+  CSS chunk contains @font-face + :root font vars; document.fonts.check: Space Grotesk 600 + Inter 400 both "loaded"; computed body font = Inter stack, h1 = Space Grotesk stack
+  / 200, /menu 200 (27 product images, 0 broken), /order 200 (3-step indicator, ৳ prices render)
+  Golden path: /order -> add Strawberry -> Go to checkout -> step 2 form (name/phone/pickup/notes) + order summary + Place order button all present (no DB test order placed; WF-0001 real customer order untouched)
+  Mobile 390px: horizontal scroll LOCKED (scrollX stays 0 after forced scrollTo(120,0); overflow-x: clip holds, no sidebar wiggle), fonts apply on mobile too
+  Footer: pushed down naturally by long content (no overlap); VLM QA of desktop screenshots: typography correct + polished, zero broken images, no rendering glitches (polaroid/price-badge overlap on desktop hero = intentional collage, hidden on mobile per Task 4)
+- lint clean; dev.log clean (only pre-existing harmless metadataBase dev warning)
+
+Stage Summary:
+- Build error fixed by eliminating next/font/google: fonts now self-hosted at /public/fonts (2 variable woff2, latin), loaded via plain @font-face in globals.css, variables --font-space-grotesk/--font-inter defined in :root
+- Zero visual change vs before (same Space Grotesk + Inter families and weights); site fully functional again on /, /menu, /order
+- Ops lessons (again): Turbopack can serve PARTIAL stale CSS after rapid sequential edits -> clear .next + restart; dev server must be launched with double-fork setsid "( setsid nohup ./node_modules/.bin/next dev -p 3000 >> dev.log 2>&1 < /dev/null & )"
