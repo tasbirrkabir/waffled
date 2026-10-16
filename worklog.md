@@ -276,3 +276,34 @@ Stage Summary:
 - Home page now has the same floating checkout popup as /menu (shared FloatingCartPill component, single source of truth)
 - Footer credit updated: "Developed by Tasbir Kabir" → tasbirkabir.me; "Pressed fresh" line removed
 - Key files: add-to-cart-button.tsx, product-card.tsx, floating-cart-pill.tsx (new), page.tsx, menu-page-content.tsx, site-footer.tsx
+
+---
+Task ID: 7
+Agent: main (Z.ai Code)
+Task: Fix checkout overlap (screenshot upload/Screenshot_20261017-042310.png)
+
+User request: "Checkout e overlap korche dekho shob kichu ek side e thik koro" — overlap in checkout, align everything to one side.
+
+Diagnosis (pixel-level analysis of user screenshot 1080x2400):
+- User was on /order step 2, scrolled ~110px. Pixel scan found dark text pixels (the "Checkout" h1 / progress steps) INSIDE the fixed site header's region (y=540-558 device px, header spans 416-584).
+- Root cause: site header was `bg-cream/90 backdrop-blur-md` when scrolled — 10% translucent, so scrolled content bled through and looked like overlapping text ("3 Confirmed" appeared half-cut under the header).
+- Secondary: the checkout header row (`flex flex-wrap justify-between`) put CheckoutSteps on the right, which wrapped into 3 ragged lines below the heading on mobile — looked misaligned.
+
+Fixes:
+1. site-header.tsx — scrolled header now fully opaque: `bg-cream shadow-[0_1px_0_0_var(--color-border-warm)]` (removed bg-cream/90 + backdrop-blur-md). Updated the two comments that referenced the old backdrop-blur behavior.
+2. order-page-content.tsx — CheckoutSteps compacted: text-xs sm:text-sm, circles h-6 w-6 sm:h-7 w-7, tighter gaps → fits ONE line at 393px (measured 24px tall).
+3. order-page-content.tsx — step 1 + step 2 headers restacked: `flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between` — on mobile everything is one left-aligned column (back link → heading → steps); on desktop steps sit right of the heading as before.
+4. menu-page-content.tsx — sticky category chips bar: bg-cream/95 backdrop-blur-md → solid bg-cream (same bleed-through risk while scrolling).
+5. mobile-action-bar.tsx — bg-cream/95 backdrop-blur-md → solid bg-cream (content scrolls under it on all pages).
+
+Verification (agent-browser):
+- Mobile 393x852 step 2: steps ONE line (24px), stacked left column, 24px gap to card, zero overlap; scrolled to 110px/180px/600px/bottom — computed header bg rgb(255,247,236) fully opaque, no bleed-through (VLM confirmed on 3 scroll positions); pb-32 gives 68px+ clearance above bottom action bar at absolute bottom
+- Golden path re-run: add → checkout → fill name/phone → Place order → "Order placed!" success + steps all checked; test order cleaned from DB
+- Desktop 1280x800: steps right of heading (heading right 248, steps left 819), one line
+- Home scrolled: header opaque cream, VLM confirms no bleed-through; /menu chips sticky + solid
+- bun run lint clean; /, /menu, /order all 200
+
+Stage Summary:
+- The "overlap" was content bleeding through the 90%-opaque fixed header on scroll — header is now solid cream everywhere (header, menu chips, mobile action bar)
+- Checkout page headers now stack into one tidy left-aligned column on mobile with a single-line progress indicator
+- Files changed: site-header.tsx, order-page-content.tsx (CheckoutSteps + 2 header rows), menu-page-content.tsx, mobile-action-bar.tsx

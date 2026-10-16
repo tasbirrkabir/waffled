@@ -62,7 +62,7 @@ export function MenuPageContent() {
       {/* Sticky category chips */}
       <nav
         aria-label="Menu categories"
-        className="sticky top-16 z-30 -mx-4 mt-8 border-y-2 border-ink/10 bg-cream/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6 md:top-[4.5rem]"
+        className="sticky top-16 z-30 -mx-4 mt-8 border-y-2 border-ink/10 bg-cream px-4 py-3 sm:-mx-6 sm:px-6 md:top-[4.5rem]"
       >
         <ul className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {menu.map((cat) => (

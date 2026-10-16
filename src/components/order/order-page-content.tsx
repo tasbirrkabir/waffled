@@ -73,15 +73,18 @@ function CheckoutSteps({ step, done = false }: { step: Step; done?: boolean }) {
   ];
   const current = done ? 3 : step;
   return (
-    <ol className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm font-medium" aria-label="Checkout progress">
+    <ol
+      className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-xs font-medium sm:gap-x-2 sm:text-sm"
+      aria-label="Checkout progress"
+    >
       {steps.map((s, i) => {
         const isDone = current > s.n;
         const isCurrent = current === s.n;
         return (
-          <li key={s.n} className="flex items-center gap-2">
+          <li key={s.n} className="flex items-center gap-1.5 sm:gap-2">
             <span
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full border-2 font-display text-xs font-bold",
+                "flex h-6 w-6 items-center justify-center rounded-full border-2 font-display text-[0.65rem] font-bold sm:h-7 sm:w-7 sm:text-xs",
                 isDone
                   ? "border-lime bg-lime text-ink"
                   : isCurrent
@@ -90,11 +93,11 @@ function CheckoutSteps({ step, done = false }: { step: Step; done?: boolean }) {
               )}
               aria-current={isCurrent ? "step" : undefined}
             >
-              {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} aria-hidden /> : s.n}
+              {isDone ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" strokeWidth={3.5} aria-hidden /> : s.n}
             </span>
             <span className={cn(isCurrent ? "text-ink" : "text-muted-warm")}>{s.label}</span>
             {i < steps.length - 1 && (
-              <span aria-hidden className="ml-1 text-ink/25">
+              <span aria-hidden className="ml-0.5 text-ink/25">
                 →
               </span>
             )}
@@ -388,8 +391,8 @@ export function OrderPageContent() {
   if (step === 2) {
     return (
       <div className="mx-auto max-w-6xl px-4 pb-32 pt-24 sm:px-6 md:pb-24 md:pt-28">
-        {/* Compact header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Compact header — stacks into one left-aligned column on mobile */}
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <button
               type="button"
@@ -907,8 +910,8 @@ export function OrderPageContent() {
   /* ------------------------------- STEP 1: BROWSE -------------------------- */
   return (
     <div className="mx-auto max-w-6xl px-4 pb-36 pt-24 sm:px-6 md:pb-28 md:pt-28 lg:pb-20">
-      {/* Compact header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Compact header — stacks into one left-aligned column on mobile */}
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
             Build your order

@@ -38,11 +38,10 @@ function MobileNavButton({
 }
 
 /**
- * Overlay renders as a SIBLING of <header>, never inside it.
- * The header gets `backdrop-blur-md` when scrolled, and any ancestor with
- * backdrop-filter becomes the containing block for its fixed descendants:
- * a fixed drawer inside the header would collapse into the header's 64px box
- * and stop appearing once the page is scrolled. Keeping it outside fixes that.
+ * Overlay renders as a SIBLING of <header>, never inside it. Keeping the
+ * drawer outside the header avoids any fixed-inside-fixed containing block
+ * issues and lets it cover the full viewport height when the page is
+ * scrolled.
  */
 function MobileNavDrawer({
   open,
@@ -201,7 +200,7 @@ export function SiteHeader() {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-cream/90 shadow-[0_1px_0_0_var(--color-border-warm)] backdrop-blur-md"
+          ? "bg-cream shadow-[0_1px_0_0_var(--color-border-warm)]"
           : "bg-transparent"
       )}
     >
@@ -304,8 +303,8 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
-    {/* Drawer overlay lives OUTSIDE <header>: the scrolled header has
-        backdrop-blur, which would otherwise trap this fixed panel. */}
+    {/* Drawer overlay lives OUTSIDE <header> so it always spans the full
+        viewport, independent of the fixed header. */}
     <MobileNavDrawer open={navOpen} onClose={() => setNavOpen(false)} />
     </>
   );

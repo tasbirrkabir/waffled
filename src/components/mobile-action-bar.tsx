@@ -9,7 +9,7 @@ import { trackEvent } from "@/lib/track";
 export function MobileActionBar() {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-cream/95 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-cream md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-3">
