@@ -16,9 +16,10 @@ export interface MenuCategory {
 }
 
 /**
- * Menu synced with the shop's official Google Maps listing
- * (Basic Flavours Waffle updated by the owner, Jun 2026).
- * Nutella Flavours Waffle, Shakes and Drinks follow the shop's menu board.
+ * Menu synced with the shop's official sources:
+ * Basic Flavours Waffle from the Google Maps listing (updated by the owner,
+ * Jun 2026). Nutella Flavours Waffle, Shakes, Drinks and Add-ons verified
+ * against the shop's official menu poster on its Facebook page.
  * Items and prices may change; the site shows a "call to confirm" note.
  */
 export const menu: MenuCategory[] = [
@@ -140,14 +141,14 @@ export const menu: MenuCategory[] = [
         id: "oreo-crush",
         name: "Oreo Crush",
         description: "Cookies-and-cream shake blended with crushed Oreo.",
-        price: 159,
+        price: 149,
         tags: ["popular"],
       },
       {
         id: "strawberry-breeze",
         name: "Strawberry Breeze",
         description: "Fresh strawberry shake, light and fruity.",
-        price: 159,
+        price: 149,
       },
       {
         id: "kitkat-fusion",
@@ -159,13 +160,13 @@ export const menu: MenuCategory[] = [
         id: "blueberry-frost",
         name: "Blueberry Frost",
         description: "Icy blueberry blend with a sweet purple swirl.",
-        price: 169,
+        price: 159,
       },
       {
         id: "nutella-bliss",
         name: "Nutella Bliss",
         description: "The hazelnut classic, sippable and rich.",
-        price: 179,
+        price: 169,
         tags: ["must-try"],
       },
     ],
@@ -251,6 +252,22 @@ export const signaturePicks = [
   },
 ] as const;
 
+/**
+ * Weekly combo offer from the shop's official Facebook poster.
+ * Berry + Brew Wednesday: any berry waffle + cold coffee.
+ */
+export const weeklyOffer = {
+  name: "Berry + Brew Wednesday",
+  description:
+    "Any berry waffle (Blueberry Burst or Strawberry Swirl) plus a cold coffee, every Wednesday.",
+  price: 259,
+  regularPrice: 310,
+  savings: 51,
+  day: "Wednesday",
+  image: "/images/offer-berry-brew.webp",
+  alt: "Waffled Berry and Brew Wednesday offer poster: any berry waffle plus cold coffee for 259 taka",
+} as const;
+
 export const faqs = [
   {
     q: "Where exactly is Waffled Sreemangal?",
@@ -274,6 +291,6 @@ export const faqs = [
   },
   {
     q: "How much do waffles cost?",
-    a: "Waffle pops start from ৳159, shakes from ৳159, and add-ons are ৳50 each. The full menu with prices is on the Menu page.",
+    a: "Waffle pops start from ৳159, shakes from ৳149, and add-ons are ৳50 each. The full menu with prices is on the Menu page.",
   },
 ] as const;

@@ -24,6 +24,11 @@ const images: GalleryImage[] = [
     caption: "Waffle pops, fresh from our Google listing",
   },
   {
+    src: "/images/gmaps/cherry-waffles.webp",
+    alt: "Two chocolate waffles topped with cherries and sauce in open Waffled takeout boxes",
+    caption: "Chocolate waffle with cherries, boxed up",
+  },
+  {
     src: "/images/gmaps/exterior-night.webp",
     alt: "Waffled Sreemangal shop exterior glowing at night",
     caption: "The shop at night, from Google Maps",
@@ -57,6 +62,11 @@ const images: GalleryImage[] = [
     src: "/images/gmaps/exterior-wide.webp",
     alt: "Wide view of the colourful open-air Waffled shop with its sign",
     caption: "The shop on Radhanagar Road, from Google Maps",
+  },
+  {
+    src: "/images/gmaps/exterior-busy.webp",
+    alt: "Waffled shop busy at night with customers lined up under the glowing WAFFLE'D neon sign",
+    caption: "A busy night on Radhanagar Road",
   },
   {
     src: "/images/gmaps/drink.webp",
