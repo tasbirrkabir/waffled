@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     apple: "/images/apple-touch-icon.png",
   },
   openGraph: {
-    title: "Waffled Sreemangal — Waffle Pops & Shakes",
+    title: "Waffled Sreemangal, Waffle Pops & Shakes",
     description:
       "Waffle pops on a stick, thick shakes and little moments worth sharing. Find us on Radhanagar Road, Sreemangal.",
     images: [{ url: "/images/og-image.jpg", width: 1200, height: 630, alt: "Waffled Sreemangal waffle pops" }],
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Waffled Sreemangal — Waffle Pops & Shakes",
+    title: "Waffled Sreemangal, Waffle Pops & Shakes",
     description:
       "Waffle pops on a stick, thick shakes and little moments worth sharing. Find us on Radhanagar Road, Sreemangal.",
     images: ["/images/og-image.jpg"],

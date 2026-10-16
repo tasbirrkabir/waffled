@@ -11,13 +11,13 @@ const features = [
   {
     icon: Flame,
     title: "Pressed fresh to order",
-    text: "Every waffle pop hits the iron when you order — never sitting under a lamp.",
+    text: "Every waffle pop hits the iron when you order, never sitting under a lamp.",
     color: "bg-orange-soft text-orange",
   },
   {
     icon: Milk,
     title: "Shakes blended thick",
-    text: "Oreo, KitKat, blueberry, Nutella — blended till the straw stands up.",
+    text: "Oreo, KitKat, blueberry, Nutella, blended till the straw stands up.",
     color: "bg-cyan-soft text-cyan",
   },
   {
@@ -46,7 +46,7 @@ export function AboutSection() {
             <div className="relative overflow-hidden rounded-[1.8rem] border-[3px] border-ink shadow-[8px_8px_0_0_var(--color-ink)]">
               <Image
                 src="/images/gallery/interior-counter.webp"
-                alt="Inside Waffled Sreemangal — black counter with gold detailing and colourful pop-art walls"
+                alt="Inside Waffled Sreemangal, black counter with gold detailing and colourful pop-art walls"
                 width={720}
                 height={1280}
                 sizes="(max-width: 1024px) 90vw, 45vw"
@@ -90,7 +90,7 @@ export function AboutSection() {
               A little joy, served on a stick.
             </h2>
             <p className="text-base leading-relaxed text-muted-warm sm:text-lg">
-              Waffled started with a simple idea — bring proper street-style waffle
+              Waffled started with a simple idea: bring proper street-style waffle
               pops to Sreemangal. Every waffle is pressed fresh, dipped while
               it&apos;s still warm, and handed over in a box you can wander with.
             </p>

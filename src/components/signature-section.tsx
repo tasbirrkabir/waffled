@@ -32,7 +32,7 @@ export function SignatureSection() {
             Meet your next favourite
           </h2>
           <p className="mt-4 text-base text-muted-warm sm:text-lg">
-            A few menu favourites to get you started — all served on a stick.
+            A few menu favourites to get you started, all served on a stick.
           </p>
         </motion.div>
 

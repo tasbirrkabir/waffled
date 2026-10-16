@@ -1,17 +1,26 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import { Phone } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 import { menu, type MenuTag } from "@/content/menu";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
+import { AddToCartButton } from "@/components/order/add-to-cart-button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const tagStyle: Record<MenuTag, string> = {
   popular: "bg-pink text-white",
-  new: "bg-cyan text-ink",
-  "must-try": "bg-lime text-ink",
+  new: "bg-orange text-white",
+  "must-try": "bg-cyan text-ink",
+};
+
+const tagLabel: Record<MenuTag, string> = {
+  popular: "Popular",
+  new: "New",
+  "must-try": "Must try",
 };
 
 export function MenuSection() {
@@ -40,7 +49,8 @@ export function MenuSection() {
             Something sweet, something you
           </h2>
           <p className="mt-4 text-base text-muted-warm sm:text-lg">
-            Waffle pops, shakes and add-ons — here&apos;s what&apos;s on the board right now.
+            Waffle pops, shakes and add-ons. Tap Add on anything you fancy, or browse
+            the full menu on its own page.
           </p>
         </motion.div>
 
@@ -110,9 +120,9 @@ export function MenuSection() {
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-warm">
                     {item.description}
                   </p>
-                  {item.tags && item.tags.length > 0 && (
-                    <div className="mt-3.5 flex flex-wrap gap-1.5">
-                      {item.tags.map((tag) => (
+                  <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.tags?.map((tag) => (
                         <span
                           key={tag}
                           className={cn(
@@ -120,24 +130,47 @@ export function MenuSection() {
                             tagStyle[tag]
                           )}
                         >
-                          {tag}
+                          {tagLabel[tag]}
                         </span>
                       ))}
                     </div>
-                  )}
+                    <AddToCartButton item={item} category={category.label} size="sm" />
+                  </div>
                 </motion.li>
               ))}
             </ul>
           </motion.div>
         </AnimatePresence>
 
+        {/* Links to full menu + order */}
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-3.5">
+          <Button
+            asChild
+            className="min-h-12 rounded-full bg-ink px-7 font-semibold text-cream shadow-[4px_4px_0_0_var(--color-pink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+          >
+            <Link href="/menu" onClick={() => trackEvent("menu_click")}>
+              See the full menu
+              <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+            </Link>
+          </Button>
+          <Button
+            asChild
+            className="min-h-12 rounded-full bg-orange px-7 font-semibold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+          >
+            <Link href="/order" onClick={() => trackEvent("menu_click")}>
+              Order online
+              <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+            </Link>
+          </Button>
+        </div>
+
         {/* Note */}
-        <div className="mx-auto mt-12 flex max-w-2xl flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-pink/50 bg-pink-soft/60 p-5 text-center sm:flex-row sm:text-left">
+        <div className="mx-auto mt-8 flex max-w-2xl flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-pink/50 bg-pink-soft/60 p-5 text-center sm:flex-row sm:text-left">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white">
             <Phone className="h-5 w-5 text-pink" aria-hidden />
           </span>
           <p className="flex-1 text-sm leading-relaxed text-ink/80">
-            Menu items and prices may change — call us to confirm today&apos;s
+            Menu items and prices may change. Call us to confirm today&apos;s
             options before you come through.
           </p>
           <a

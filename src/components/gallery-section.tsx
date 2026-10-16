@@ -19,29 +19,49 @@ interface GalleryImage {
 
 const images: GalleryImage[] = [
   {
-    src: "/images/gallery/waffle-closeup.webp",
-    alt: "Chocolate-glazed waffle pops with white drizzle and toppings in open boxes",
-    caption: "Fresh off the dip — chocolate glaze waffle pops",
+    src: "/images/gmaps/waffle-pops.webp",
+    alt: "Three chocolate-glazed waffle pops on sticks in purple boxes with marshmallows and drizzle",
+    caption: "Waffle pops, fresh from our Google listing",
+  },
+  {
+    src: "/images/gmaps/exterior-night.webp",
+    alt: "Waffled Sreemangal shop exterior glowing at night",
+    caption: "The shop at night, from Google Maps",
   },
   {
     src: "/images/gallery/mural-logo.webp",
     alt: "Colourful pop-art mural with the WAFFLED logo and waffle mascot on the shop wall",
-    caption: "Our wall — WAFFLED love in full colour",
+    caption: "Our wall, WAFFLED love in full colour",
+  },
+  {
+    src: "/images/gmaps/choco-waffle-box.webp",
+    alt: "Chocolate waffle topped with whipped cream, chocolate chips and drizzle in a pink box",
+    caption: "Chocolate waffle, boxed and ready",
   },
   {
     src: "/images/gallery/interior-counter.webp",
     alt: "Waffled shop interior with black counter, gold slat detailing and neon-bright murals",
-    caption: "The counter — black, gold and lots of colour",
+    caption: "The counter, black, gold and lots of colour",
+  },
+  {
+    src: "/images/gmaps/sign.webp",
+    alt: "Close-up of the circular WAFFLED sign",
+    caption: "The sign, from Google Maps",
   },
   {
     src: "/images/gallery/waffle-spread.webp",
     alt: "Assorted waffle pop boxes held up showing different flavours",
-    caption: "The spread — pick your flavour",
+    caption: "The spread, pick your flavour",
   },
   {
-    src: "/images/gallery/shop-sign.webp",
-    alt: "Illuminated circular WAFFLED sign with city skyline artwork",
-    caption: "The sign — you can't miss it",
+    src: "/images/gmaps/exterior-wide.webp",
+    alt: "Wide view of the colourful open-air Waffled shop with its sign",
+    caption: "The shop on Radhanagar Road, from Google Maps",
+  },
+  {
+    src: "/images/gmaps/drink.webp",
+    alt: "Frothy shake or coffee in a paper cup on the counter",
+    caption: "Something sippable, from Google Maps",
   },
   {
     src: "/images/gallery/counter-order.webp",
@@ -51,7 +71,7 @@ const images: GalleryImage[] = [
   {
     src: "/images/gallery/menu-card.webp",
     alt: "Printed Waffled menu card with waffle pop flavours and prices in taka",
-    caption: "The menu card — flavours and prices",
+    caption: "The menu card, flavours and prices",
   },
   {
     src: "/images/gallery/ordering-experience.webp",
@@ -85,7 +105,8 @@ export function GallerySection() {
             A closer look
           </h2>
           <p className="mt-4 text-base text-muted-warm sm:text-lg">
-            Real waffles, real shop — straight from Radhanagar Road.
+            Real waffles, real shop. Photos straight from our Google Maps listing and
+            Radhanagar Road.
           </p>
         </motion.div>
 
@@ -142,7 +163,7 @@ export function GallerySection() {
                   {selected.caption}
                 </DialogTitle>
                 <DialogDescription id="gallery-caption" className="mt-0.5 text-sm">
-                  Waffled Sreemangal · Radhanagar Road
+                  Waffled Sreemangal, Radhanagar Road
                 </DialogDescription>
               </div>
               <button

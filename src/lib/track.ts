@@ -1,6 +1,6 @@
 /**
  * Client-side CTA tracking helper.
- * Safe to import in client components — fire-and-forget, never throws,
+ * Safe to import in client components: fire-and-forget, never throws,
  * never blocks navigation.
  */
 

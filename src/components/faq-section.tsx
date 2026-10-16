@@ -36,7 +36,7 @@ export function FaqSection() {
               Good to know
             </h2>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-warm sm:text-lg">
-              The questions we hear most at the counter — answered before you ask.
+              The questions we hear most at the counter, answered before you ask.
             </p>
             <p className="mt-6 text-sm text-muted-warm">
               Still curious?{" "}
@@ -46,7 +46,7 @@ export function FaqSection() {
               >
                 Give us a ring
               </a>{" "}
-              — we pick up.
+              , we pick up.
             </p>
           </motion.div>
 

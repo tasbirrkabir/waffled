@@ -10,11 +10,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { href: "#menu", label: "Menu" },
-  { href: "#signature", label: "Signature" },
-  { href: "#story", label: "Our Story" },
-  { href: "#gallery", label: "Gallery" },
-  { href: "#visit", label: "Visit Us" },
+  { href: "/menu", label: "Menu" },
+  { href: "/order", label: "Order Online" },
+  { href: "/#story", label: "Our Story" },
+  { href: "/#gallery", label: "Gallery" },
+  { href: "/#visit", label: "Visit Us" },
 ];
 
 function MobileNavDrawer() {
@@ -100,7 +100,7 @@ function MobileNavDrawer() {
 
         <nav aria-label="Mobile" className="flex flex-col gap-1 overflow-y-auto p-5">
           {navLinks.map((link, i) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
@@ -110,7 +110,7 @@ function MobileNavDrawer() {
               <span className="text-xs font-bold text-pink" aria-hidden>
                 0{i + 1}
               </span>
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -119,15 +119,15 @@ function MobileNavDrawer() {
             asChild
             className="h-12 w-full rounded-2xl bg-orange text-base font-semibold text-white shadow-[3px_3px_0_0_var(--color-ink)]"
           >
-            <a
-              href="#menu"
+            <Link
+              href="/order"
               onClick={() => {
                 trackEvent("menu_click");
                 setOpen(false);
               }}
             >
-              Explore the Menu
-            </a>
+              Order Online
+            </Link>
           </Button>
           <Button
             asChild
@@ -190,14 +190,14 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 md:h-[4.5rem]">
         {/* Brand */}
         <Link
-          href="#top"
+          href="/"
           className="flex items-center gap-2.5"
-          aria-label="Waffled Sreemangal — back to top"
+          aria-label="Waffled Sreemangal, back to home"
         >
           <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)] md:h-11 md:w-11">
             <Image
               src="/images/logo.png"
-              alt="Waffled logo — a bold W with a colourful splash pattern"
+              alt="Waffled logo, a bold W with a colourful splash pattern"
               fill
               sizes="44px"
               className="object-contain p-0.5"
@@ -217,13 +217,13 @@ export function SiteHeader() {
         {/* Desktop nav */}
         <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className="rounded-full px-3.5 py-2 text-sm font-medium text-ink/80 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -260,9 +260,9 @@ export function SiteHeader() {
             asChild
             className="min-h-11 rounded-full bg-orange px-5 font-semibold text-white shadow-[3px_3px_0_0_var(--color-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
           >
-            <a href="#menu" onClick={() => trackEvent("menu_click")}>
-              View Menu
-            </a>
+            <Link href="/order" onClick={() => trackEvent("menu_click")}>
+              Order Online
+            </Link>
           </Button>
         </div>
 

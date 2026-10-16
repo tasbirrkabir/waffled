@@ -27,6 +27,19 @@ const jsonLd = {
     postalCode: siteConfig.address.postalCode,
     addressCountry: siteConfig.address.countryCode,
   },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: siteConfig.coordinates.lat,
+    longitude: siteConfig.coordinates.lng,
+  },
+  // Rating verified directly from the shop's Google Maps listing
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: siteConfig.rating.value,
+    reviewCount: siteConfig.rating.count,
+    bestRating: "5",
+    worstRating: "1",
+  },
   sameAs: [siteConfig.socials.facebook, siteConfig.socials.instagram],
   hasMap: siteConfig.mapsUrl,
   openingHoursSpecification: siteConfig.hours.days.map((d) => {

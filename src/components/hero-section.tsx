@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDown, Check, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Star } from "lucide-react";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ const marqueeItems = [
   "NUTELLA LOVE",
   "THICK SHAKES",
   "NEW: OREO CRUNCH",
-  "RADHANAGAR · SREEMANGAL",
+  "RADHANAGAR ROAD, SREEMANGAL",
   "PRESSED FRESH",
 ];
 
@@ -50,14 +51,6 @@ export function HeroSection() {
           transition={{ duration: 0.55, ease: "easeOut" }}
           className="flex flex-col items-start gap-6"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border-2 border-ink bg-white px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.22em] shadow-[2px_2px_0_0_var(--color-ink)]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pink opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-pink" />
-            </span>
-            Waffle time · Sreemangal
-          </span>
-
           <h1
             id="hero-heading"
             className="font-display text-[2.6rem] font-bold leading-[1.04] tracking-tight sm:text-6xl lg:text-[4.2rem]"
@@ -83,8 +76,8 @@ export function HeroSection() {
           </p>
 
           <p className="max-w-md text-base leading-relaxed text-muted-warm sm:text-lg">
-            Waffle pops on a stick, thick shakes and little moments worth sharing —
-            from our counter on Radhanagar Road to your hands.
+            Waffle pops on a stick, thick shakes and little moments worth sharing, from
+            our counter on Radhanagar Road to your hands.
           </p>
 
           <div className="flex flex-wrap items-center gap-3.5">
@@ -92,30 +85,46 @@ export function HeroSection() {
               asChild
               className="min-h-12 rounded-full bg-orange px-7 text-base font-semibold text-white shadow-[4px_4px_0_0_var(--color-ink)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
             >
-              <a href="#menu" onClick={() => trackEvent("menu_click")}>
-                Explore the Menu
-                <ArrowDown className="ml-1 h-4 w-4" aria-hidden />
-              </a>
+              <Link href="/order" onClick={() => trackEvent("menu_click")}>
+                Order Online
+                <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+              </Link>
             </Button>
             <Button
               asChild
               variant="outline"
               className="min-h-12 rounded-full border-2 border-ink bg-white px-7 text-base font-semibold text-ink shadow-[4px_4px_0_0_rgba(32,23,25,0.15)] transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
             >
-              <a
-                href={siteConfig.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackEvent("directions_click")}
-              >
-                <MapPin className="mr-1 h-4 w-4" aria-hidden />
-                Get Directions
-              </a>
+              <Link href="/menu" onClick={() => trackEvent("menu_click")}>
+                Explore the Menu
+              </Link>
             </Button>
           </div>
 
+          {/* Google rating */}
+          <a
+            href={siteConfig.reviewsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2.5 rounded-2xl border-2 border-ink/10 bg-white/70 px-4 py-2.5 transition-colors hover:border-ink/30"
+            aria-label={`Waffled Sreemangal is rated ${siteConfig.rating.value} out of 5 on Google Maps from ${siteConfig.rating.count} reviews. Open our Google Maps listing.`}
+          >
+            <span className="flex items-center gap-0.5" aria-hidden>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" strokeWidth={1.5} />
+              ))}
+            </span>
+            <span className="text-sm font-bold text-ink">
+              {siteConfig.rating.value}
+              <span className="font-medium text-muted-warm"> on Google</span>
+            </span>
+            <span className="rounded-full bg-lime px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-ink">
+              {siteConfig.rating.count} reviews
+            </span>
+          </a>
+
           <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-sm font-medium text-ink/75">
-            {["Takeaway friendly", "Open daily 12 PM – 11 PM", "Waffles from ৳149"].map((t) => (
+            {["Takeaway friendly", "Open daily 12 PM to 11 PM", "Waffles from ৳159"].map((t) => (
               <li key={t} className="flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-pink" strokeWidth={3} aria-hidden />
                 {t}
@@ -133,10 +142,10 @@ export function HeroSection() {
         >
           <div className="relative overflow-hidden rounded-[2rem] border-[3px] border-ink bg-white shadow-[8px_8px_0_0_var(--color-ink)]">
             <Image
-              src="/images/hero-waffle.webp"
-              alt="Chocolate-glazed waffle pops with cream drizzle and toppings served at Waffled Sreemangal"
-              width={720}
-              height={1280}
+              src="/images/hero-waffle-gmaps.webp"
+              alt="Chocolate-glazed waffle pops on sticks served in purple boxes at Waffled Sreemangal"
+              width={900}
+              height={1125}
               priority
               sizes="(max-width: 1024px) 90vw, 40vw"
               className="aspect-[4/5] w-full object-cover"
@@ -146,7 +155,7 @@ export function HeroSection() {
               <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-ink/70">
                 Waffle pops from
               </p>
-              <p className="font-display text-2xl font-bold leading-none text-ink">৳149</p>
+              <p className="font-display text-2xl font-bold leading-none text-ink">৳159</p>
             </div>
           </div>
 
@@ -160,10 +169,10 @@ export function HeroSection() {
                 <path id="badge-circle" d="M 50,50 m -34,0 a 34,34 0 1,1 68,0 a 34,34 0 1,1 -68,0" />
               </defs>
               <text className="fill-cream font-display text-[10.5px] font-bold uppercase tracking-[0.24em]">
-                <textPath href="#badge-circle">waffle love · waffle love ·</textPath>
+                <textPath href="#badge-circle">waffle love ✦ waffle love ✦</textPath>
               </text>
             </svg>
-            <Sparkles className="h-6 w-6 sm:h-7 sm:w-7" />
+            <Star className="h-6 w-6 fill-cream sm:h-7 sm:w-7" aria-hidden />
           </div>
 
           {/* small polaroid card */}
@@ -175,10 +184,10 @@ export function HeroSection() {
             aria-hidden
           >
             <Image
-              src="/images/gallery/shop-sign.webp"
+              src="/images/gmaps/sign.webp"
               alt=""
-              width={720}
-              height={1280}
+              width={560}
+              height={560}
               sizes="144px"
               className="aspect-square w-full rounded-lg object-cover"
             />

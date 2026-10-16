@@ -111,3 +111,45 @@ Stage Summary:
 - All business data from verified sources (video menu transcription, Restaurant Guru, socials from user); menu carries "may change, call to confirm" note
 - APIs live: /api/subscribe + /api/events with rate limiting; event tracking wired to all CTAs
 - Remaining owner inputs before production launch: confirm exact menu prices, domain for canonical/metadataBase, official review link, approve photos
+
+---
+Task ID: 3
+Agent: main (Z.ai Code)
+Task: Google Maps data integration (pictures/menu/business info), remove em dashes + hero badge, add /menu + /order routes with online ordering
+
+Work Log:
+- Scraped live Google Maps listing via agent-browser (desktop limited view + mobile emulation):
+  - Business info: rating 4.9 (32 reviews), category "Dessert restaurant", address Sreemangal 3210, phone +880 1723-399638, plus code 8Q27+4P, coords 24.3003415/91.7642588, owner post "New items added" Jun 2 2026
+  - Menu (from user's screenshot of the Menu tab, VLM-verified 3x): Basic Flavours Waffle = Strawberry 179, Blueberry 179, Choco Chip Classic 179, Banana 179, Kitkat 179, Nutella Crunch 159, Red Velvet 169, Swirl (Strawberry Swirl) 169, Oreo Crunch 219, Biscoff Bliss 219; second category "Nutella Flavours Wa..." (truncated)
+  - Photos: extracted 8 googleusercontent URLs from DOM, downloaded at w=1600 (7 unique after md5 dedup), VLM-identified each
+  - Review: full English review from Tawfiq Rahman (Local Guide, 5 stars, Food 5/Service 5/Atmosphere 4, takeout, live music) via "See original" toggle
+- Processed photos to public/images/gmaps/*.webp (1400px, 82q) + hero-waffle-gmaps.webp (900x1125 4:5 crop of waffle pops photo)
+- src/content/menu.ts: restructured to Google Maps categories (Basic Flavours Waffle with exact 10 items/prices; Nutella Flavours Waffle/Shakes/Drinks from video transcription), FAQ updated (order online answer, prices from 159), removed all em dashes
+- src/content/site.ts: added rating {4.9, 32}, plusCode, coordinates, whatsappUrl, real place reviewsUrl; hours labels "12:00 PM to 11:00 PM" (no en dash); isOpenNow label "Open now, till X"
+- hero-section.tsx: REMOVED "Waffle time · Sreemangal" pill badge; em dash removed; hero image now hero-waffle-gmaps.webp (real Google photo); price sticker 149->159; CTAs now Link to /order (primary) + /menu; added clickable Google rating chip (4.9, 32 reviews); rotating badge separator · -> ✦; marquee "RADHANAGAR · SREEMANGAL" -> "RADHANAGAR ROAD, SREEMANGAL"
+- Removed ALL em/en dashes site-wide: site-header (aria-labels/alt), menu-section, signature-section, gallery-section, faq-section, about-section, reviews-section, site-footer, layout.tsx titles, api/subscribe message, lib/track comment
+- site-header.tsx: nav now routes Menu->/menu, Order Online->/order, Our Story->/#story, Gallery->/#gallery, Visit Us->/#visit; desktop CTA "Order Online"->/order; brand link ->/
+- mobile-action-bar.tsx: Menu->/menu, Order->/order, Call (tel:)
+- site-footer.tsx: quickLinks use routes via Link; added plus code line
+- NEW src/lib/cart-store.ts: Zustand cart (persist localStorage, max 20/item) + cartCount/cartSubtotal/formatTk helpers
+- NEW src/components/order/add-to-cart-button.tsx: Add button morphs into qty stepper with toast
+- NEW src/app/menu/page.tsx + menu-page-content.tsx: full menu route, sticky category chips (IntersectionObserver active state), item cards with tags + Add buttons, Google sync + 4.9 rating badges, Menu JSON-LD, CTAs
+- NEW src/app/order/page.tsx + order-page-content.tsx: order flow (steps indicator, category tabs, sticky cart aside with qty steppers/remove, checkout form: name/BD phone validation/pickup select/notes, success view with order number + WhatsApp send + call + restart)
+- NEW src/app/api/orders/route.ts: zod validation (BD phone regex, pickup enum, items 1-50 x qty 1-20), server re-prices from menu.ts (anti-tampering), WF-#### order numbers, WhatsApp message builder + wa.me URL, 3/min/IP rate limit
+- prisma: added Order model (orderNumber unique, customerName, phone, pickupTime, notes, items JSON string, total, status), pushed + regenerated; dev server restarted (old client was cached on globalThis)
+- Dev server restart procedure: double-fork setsid with ./node_modules/.bin/next (plain "next" not on PATH in detached bash)
+- Verification (agent-browser + curl):
+  - / /menu /order all 200; titles correct
+  - Homepage DOM: no "Waffle time" badge, zero em/en dashes, 4.9+32 reviews shown, CTAs correct, hero image loads
+  - 22 images 0 broken; all 7 gmaps photos load (gallery + hero polaroid)
+  - /menu: 4 categories, all Google items, 27 add buttons, CTAs
+  - Order flow E2E: added items on /menu, cart persisted to /order (localStorage), filled form, placed order WF-0001 total 537, WhatsApp URL decodes to formatted message, DB row saved correctly; validation errors (bad phone/bad item/empty) friendly; 429 rate limit works
+  - Mobile 390px: action bar (Menu/Order/Call), no horizontal scroll possible, footer at bottom; VLM visual checks pass on home/order/menu
+  - lint clean, tsc clean (src), dev.log clean; test orders + test subscriber cleaned from DB
+
+Stage Summary:
+- Real Google Maps data fully integrated: 7 real photos, Google menu (Basic Flavours Waffle 10 items), 4.9/32 rating shown + JSON-LD aggregateRating, plus code, coords, real review (Tawfiq Rahman)
+- Em dashes + "Waffle time · Sreemangal" badge removed everywhere (verified zero in rendered DOM)
+- Multi-route site: / (home) + /menu (full menu) + /order (online ordering); cart persists across pages via Zustand localStorage
+- Online ordering complete: server-validated, DB-persisted orders with WF-#### numbers, WhatsApp handoff (wa.me/8801723399638 pre-filled message) + call fallback, pay-at-pickup model
+- APIs: /api/subscribe + /api/events (unchanged) + /api/orders (new)

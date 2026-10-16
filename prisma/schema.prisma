@@ -22,3 +22,20 @@ model CtaEvent {
 
   @@index([type, createdAt])
 }
+
+// Online pickup orders placed through /order (confirmed via WhatsApp/call)
+model Order {
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  customerName String
+  phone        String
+  pickupTime   String
+  notes        String?
+  items        String // JSON-encoded [{id,name,price,qty}]
+  total        Int
+  status       String   @default("new")
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([status])
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Facebook, Instagram, Phone, MapPin, Mail, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,12 +10,13 @@ import { trackEvent } from "@/lib/track";
 import { Input } from "@/components/ui/input";
 
 const quickLinks = [
-  { href: "#menu", label: "Menu" },
-  { href: "#signature", label: "Signature picks" },
-  { href: "#story", label: "Our story" },
-  { href: "#gallery", label: "Gallery" },
-  { href: "#visit", label: "Visit us" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/menu", label: "Menu" },
+  { href: "/order", label: "Order online" },
+  { href: "/#signature", label: "Signature picks" },
+  { href: "/#story", label: "Our story" },
+  { href: "/#gallery", label: "Gallery" },
+  { href: "/#visit", label: "Visit us" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 function NewsletterForm() {
@@ -39,7 +41,7 @@ function NewsletterForm() {
         toast.error(data.error ?? "Something went wrong. Please try again.");
       }
     } catch {
-      toast.error("Network hiccup — please try again.");
+      toast.error("Network hiccup, please try again.");
     } finally {
       setLoading(false);
     }
@@ -134,12 +136,12 @@ export function SiteFooter() {
             <ul className="mt-4 space-y-2.5">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-sm text-cream/75 transition-colors hover:text-pink"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -178,7 +180,10 @@ export function SiteFooter() {
                 </a>
               </li>
               <li className="text-xs text-cream/50">
-                Open daily 12:00 PM – 11:00 PM · Mon till 11:30 PM
+                Open daily 12:00 PM to 11:00 PM, Mon till 11:30 PM
+              </li>
+              <li className="text-xs text-cream/50">
+                Google plus code: {siteConfig.plusCode}
               </li>
             </ul>
           </div>
@@ -194,7 +199,7 @@ export function SiteFooter() {
             </p>
             <NewsletterForm />
             <p className="mt-3 text-xs text-cream/40">
-              No spam — just waffles. Unsubscribe anytime.
+              No spam, just waffles. Unsubscribe anytime.
             </p>
           </div>
         </div>

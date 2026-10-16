@@ -46,10 +46,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "You're on the list — we'll ping you when new flavours drop.",
+      message: "You're on the list, we'll ping you when new flavours drop.",
     });
   } catch (error) {
-    // Duplicate email — the subscriber is already signed up, so treat it
+    // Duplicate email: the subscriber is already signed up, so treat it
     // as a friendly success rather than an error.
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

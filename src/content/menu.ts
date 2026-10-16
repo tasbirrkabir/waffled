@@ -16,15 +16,47 @@ export interface MenuCategory {
 }
 
 /**
- * Menu transcribed from the shop's own promo video menu board.
- * Items and prices may change — the site shows a "call to confirm" note.
+ * Menu synced with the shop's official Google Maps listing
+ * (Basic Flavours Waffle updated by the owner, Jun 2026).
+ * Nutella Flavours Waffle, Shakes and Drinks follow the shop's menu board.
+ * Items and prices may change; the site shows a "call to confirm" note.
  */
 export const menu: MenuCategory[] = [
   {
-    id: "classic-waffles",
-    label: "Classic Waffles",
-    blurb: "Crispy waffle pops on a stick, dressed the classic way.",
+    id: "basic-waffles",
+    label: "Basic Flavours Waffle",
+    blurb: "The classics from our Google Maps menu, pressed fresh on a stick.",
     items: [
+      {
+        id: "strawberry",
+        name: "Strawberry",
+        description: "Sweet strawberry glaze over a golden waffle pop.",
+        price: 179,
+      },
+      {
+        id: "blueberry",
+        name: "Blueberry",
+        description: "Blueberry sauce and a cloud of cream on a warm waffle.",
+        price: 179,
+      },
+      {
+        id: "choco-chip-classic",
+        name: "Choco Chip Classic",
+        description: "Chocolate chips folded into a classic golden waffle pop.",
+        price: 179,
+      },
+      {
+        id: "banana",
+        name: "Banana",
+        description: "Sliced banana on a warm, buttery waffle pop.",
+        price: 179,
+      },
+      {
+        id: "kitkat",
+        name: "Kitkat",
+        description: "KitKat shards over a chocolate-glazed waffle pop.",
+        price: 179,
+      },
       {
         id: "nutella-crunch",
         name: "Nutella Crunch",
@@ -41,29 +73,10 @@ export const menu: MenuCategory[] = [
       {
         id: "strawberry-swirl",
         name: "Strawberry Swirl",
-        description: "Sweet strawberry drizzle swirled over a golden waffle pop.",
+        description: "Strawberry drizzle swirled over a golden waffle pop.",
         price: 169,
         tags: ["must-try"],
       },
-      {
-        id: "blueberry-burst",
-        name: "Blueberry Burst",
-        description: "Blueberry sauce and a cloud of cream on a warm waffle.",
-        price: 179,
-      },
-      {
-        id: "choco-chip-classic",
-        name: "Choco Chip Classic",
-        description: "Chocolate chips folded into a classic golden waffle pop.",
-        price: 179,
-      },
-    ],
-  },
-  {
-    id: "new-arrivals",
-    label: "New Arrivals",
-    blurb: "Fresh off the iron — the latest experiments people are talking about.",
-    items: [
       {
         id: "oreo-crunch",
         name: "Oreo Crunch",
@@ -82,7 +95,7 @@ export const menu: MenuCategory[] = [
   },
   {
     id: "nutella-waffles",
-    label: "Nutella Lovers",
+    label: "Nutella Flavours Waffle",
     blurb: "For the seriously chocolate-hazelnut obsessed.",
     items: [
       {
@@ -160,12 +173,12 @@ export const menu: MenuCategory[] = [
   {
     id: "drinks",
     label: "Drinks & Add-ons",
-    blurb: "Something sippable — plus extras to pimp your waffle.",
+    blurb: "Something sippable, plus extras to pimp your waffle.",
     items: [
       {
         id: "mint-lemonade",
         name: "Mint Lemonade",
-        description: "Cool, zesty and refreshing — the perfect waffle partner.",
+        description: "Cool, zesty and refreshing, the perfect waffle partner.",
         price: 49,
       },
       {
@@ -230,7 +243,7 @@ export const signaturePicks = [
   {
     id: "nutella-crunch",
     name: "Nutella Crunch",
-    description: "The one that started it all — chocolate-dipped waffle pop with a crunchy finish.",
+    description: "The one that started it all: chocolate-dipped waffle pop with a crunchy finish.",
     price: 159,
     image: "/images/sig-nutella.webp",
     alt: "Assorted waffle pops in boxes held up at Waffled Sreemangal shop",
@@ -241,19 +254,19 @@ export const signaturePicks = [
 export const faqs = [
   {
     q: "Where exactly is Waffled Sreemangal?",
-    a: "We're on Radhanagar Road in Sreemangal — near Grand Sultan Tea Resort & Golf Club, right at the entrance of Radhanagar Road. Tap “Open in Google Maps” in the Visit section for turn-by-turn directions.",
+    a: "We're on Radhanagar Road in Sreemangal, near Grand Sultan Tea Resort & Golf Club, right at the entrance of Radhanagar Road. Tap \"Open in Google Maps\" in the Visit section for turn-by-turn directions.",
   },
   {
     q: "What are your opening hours?",
-    a: "We're open every day from 12:00 PM to 11:00 PM, and until 11:30 PM on Mondays. Hours can vary on holidays — a quick call before a late visit saves you a trip.",
+    a: "We're open every day from 12:00 PM to 11:00 PM, and until 11:30 PM on Mondays. Hours can vary on holidays, so a quick call before a late visit saves you a trip.",
+  },
+  {
+    q: "Can I order online?",
+    a: "Yes! Build your order on our Order Online page, then send it to us on WhatsApp or over a quick call. We'll have it boxed and ready for pickup.",
   },
   {
     q: "Can I take my order away?",
-    a: "Yes — every waffle pop is served in its own box, made for strolling around Radhanagar or taking home.",
-  },
-  {
-    q: "Can I call before visiting?",
-    a: "Absolutely. Call +880 1723-399638 to check if a specific flavour is available today or to ask anything before you drop by.",
+    a: "Yes, every waffle pop is served in its own box, made for strolling around Radhanagar or taking home.",
   },
   {
     q: "Are all menu items available every day?",
@@ -261,6 +274,6 @@ export const faqs = [
   },
   {
     q: "How much do waffles cost?",
-    a: "Waffle pops start from ৳149, shakes from ৳159, and add-ons are ৳50 each. The full menu with prices is in the Menu section above.",
+    a: "Waffle pops start from ৳159, shakes from ৳159, and add-ons are ৳50 each. The full menu with prices is on the Menu page.",
   },
 ] as const;
