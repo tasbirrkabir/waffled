@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+  --font-bangla: var(--font-hind-siliguri);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Waffled brand palette */
+  --color-ink: #201719;
+  --color-cream: #fff7ec;
+  --color-pink: #f24c8b;
+  --color-pink-soft: #ffe1ee;
+  --color-orange: #ff7b30;
+  --color-orange-soft: #ffe8d9;
+  --color-lime: #bce84a;
+  --color-lime-soft: #f0f9d7;
+  --color-cyan: #42c7d9;
+  --color-cyan-soft: #dff6fa;
+  --color-purple: #7b4ff3;
+  --color-purple-soft: #ece4ff;
+  --color-surface: #ffffff;
+  --color-muted-warm: #725e63;
+  --color-border-warm: #e9dcd8;
+
+  --font-heading: var(--font-space-grotesk), var(--font-inter), sans-serif;
+}
+
+:root {
+  --radius: 1rem;
+  --background: #fff7ec;
+  --foreground: #201719;
+  --card: #ffffff;
+  --card-foreground: #201719;
+  --popover: #ffffff;
+  --popover-foreground: #201719;
+  --primary: #ff7b30;
+  --primary-foreground: #ffffff;
+  --secondary: #ffe8d9;
+  --secondary-foreground: #201719;
+  --muted: #f6ede2;
+  --muted-foreground: #725e63;
+  --accent: #f24c8b;
+  --accent-foreground: #ffffff;
+  --destructive: #e5484d;
+  --border: #e9dcd8;
+  --input: #e9dcd8;
+  --ring: #f24c8b;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-space-grotesk), var(--font-inter), sans-serif;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: #f24c8b;
+    color: #fff;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-space-grotesk), var(--font-inter), sans-serif;
+  }
+  .font-bangla {
+    font-family: var(--font-hind-siliguri), sans-serif;
+  }
+  /* Hand-drawn underline for hero highlight */
+  .marker-underline {
+    position: relative;
+    white-space: nowrap;
+  }
+  .marker-underline > svg {
+    position: absolute;
+    left: -2%;
+    bottom: -0.18em;
+    width: 104%;
+    height: 0.32em;
+    overflow: visible;
+  }
+  /* Custom scrollbar for long lists */
+  .nice-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .nice-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .nice-scrollbar::-webkit-scrollbar-thumb {
+    background: #e9dcd8;
+    border-radius: 999px;
+  }
+  .nice-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #f24c8b;
+  }
+}
+
+/* Marquee animation */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+/* Slow spin for badge */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 16s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-slow {
+    animation: none;
+  }
+}

@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Email subscribers for "new flavour alerts" captured from the website
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Anonymous CTA click events (menu / directions / call / social) — no PII
+model CtaEvent {
+  id        String   @id @default(cuid())
+  type      String
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+}
