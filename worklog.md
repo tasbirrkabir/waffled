@@ -153,3 +153,38 @@ Stage Summary:
 - Multi-route site: / (home) + /menu (full menu) + /order (online ordering); cart persists across pages via Zustand localStorage
 - Online ordering complete: server-validated, DB-persisted orders with WF-#### numbers, WhatsApp handoff (wa.me/8801723399638 pre-filled message) + call fallback, pay-at-pickup model
 - APIs: /api/subscribe + /api/events (unchanged) + /api/orders (new)
+
+---
+Task ID: 4
+Agent: main (Z.ai Code)
+Task: Fix mobile hero/sidebar glitch, remove Bangla text from home, redesign checkout as proper multi-step flow, add product images to every product
+
+Work Log:
+- Analyzed user screenshot (VLM): "THE SHOP" polaroid card + price sticker overlapping hero image on mobile = the "sidebar glitch"; also confirmed via agent-browser iPhone 14 emulation + bounding-box measurements
+- hero-section.tsx: removed Bangla tagline paragraph (siteConfig.taglineBn) entirely; hid polaroid card on mobile/tablet (hidden lg:block, was overlapping hero image + price sticker + mobile action bar); rotated badge offset reduced on mobile (-right-3 -top-5) to prevent viewport clipping
+- site.ts: removed taglineBn; layout.tsx: removed Hind_Siliguri font import (no Bangla text anywhere now); globals.css: removed --font-bangla + .font-bangla
+- ROOT CAUSE of horizontal "sidebar wiggle" found: visit-section map card animates from x:24 (framer-motion whileInView initial), extending 8px past viewport before animation triggers -> scrollWidth 398 vs 390. Fixed globally with `overflow-x: clip` on html in globals.css (clip preserves position:sticky, unlike hidden); verified scrollX locked to 0, sticky chips + sticky cart sidebar still work
+- Generated 27 consistent product photos via z-ai-web-dev-sdk image generation (1024x1024, sequential with 429 backoff - API rate-limits concurrency):
+  10 basic waffles, 5 nutella waffles, 5 shakes, 2 drinks, 5 add-ons; converted to 800px webp q80 (scripts/gen-product-images.ts + scripts/convert_products.py) -> public/images/products/*.webp (1.1MB total)
+- menu.ts: added image + imageAlt to every MenuItem; signaturePicks now use product images
+- NEW src/components/order/product-card.tsx: shared image card (square image, tag badges over image, name/price/desc/category, Add-to-cart) used on home menu section, /menu, /order
+- REWROTE order-page-content.tsx as proper multi-step checkout (was single-page landing-style):
+  Step 1 "Build your order": compact header + CheckoutSteps progress (Items -> Checkout -> Confirmed), trust chips, category tabs, 2-col mobile product grid, desktop sticky cart sidebar, mobile floating checkout bar above action bar
+  Step 2 "Checkout": back link, Your details (name/phone) + Pickup (time/notes) numbered sections, pickup-only/pay-at-counter info card, order summary with editable line items; desktop 2-col sticky summary, mobile single col summary + form; sticky Place-order
+  Step 3 Success: order number, itemized recap, WhatsApp/call CTAs, new-order restart
+- menu-page-content.tsx: product image grid (4-col desktop), floating cart pill when cart non-empty -> /order
+- menu-section.tsx (home): image ProductCards in 2-col mobile grid
+- Toast overlap fix: [data-sonner-toaster] bottom raised to 12rem+safe-area on <768px (above action bar + floating cart pill); floating bars offset 3.75rem (clears action bar 3px border)
+- Dev server Turbopack served stale CSS after edits (toast rule stayed 7rem) -> restarted dev server (kill next/next-server/postcss pids, setsid nohup ./node_modules/.bin/next dev -p 3000); CSS then served fresh
+- E2E verified with agent-browser:
+  Desktop: /order add 3 items -> Go to checkout -> form -> Place order WF-0002 ৳557 correct; WhatsApp message decodes with items/total/name/pickup; DB row saved; success view + item recap
+  Mobile (iPhone 14): 2-col product grid, floating checkout bar above action bar (2 items ৳318), validation errors show (name/phone), order WF-0003 ৳318 placed; menu page floating pill works; toast clears pill (toastBottomEdge 652 < pillTop 710)
+  Home: no Bangla text in DOM (only ৳ symbol), polaroid hidden on mobile/badge geometry verified via getBoundingClientRect, desktop polaroid reads as intentional collage
+  All 27 product images load (0 broken) on /menu; lint clean; tsc clean for src/
+- Cleaned test orders WF-0002/WF-0003 from DB (kept WF-0001, a real customer order from Tasbir Kabir)
+
+Stage Summary:
+- All 4 user requests done: hero glitch fixed (polaroid hidden on mobile + global overflow-x clip kills the wiggle), Bangla text removed from home, checkout redesigned into a real 3-step e-commerce flow (browse -> checkout -> confirmed) with VLM grade A-, every product now has a unique appetizing product image
+- New shared component: ProductCard (image + tags + add-to-cart) used across home/menu/order
+- Assets: 27 AI product photos in public/images/products/ (800px webp), generation + conversion scripts kept in scripts/
+- Note for future agents: Turbopack CSS may serve stale after globals.css edits -> restart dev server if CSS changes don't appear; keep dev server running via setsid nohup

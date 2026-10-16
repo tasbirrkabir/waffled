@@ -4,24 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Phone } from "lucide-react";
-import { menu, type MenuTag } from "@/content/menu";
+import { menu } from "@/content/menu";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
-import { AddToCartButton } from "@/components/order/add-to-cart-button";
+import { ProductCard } from "@/components/order/product-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const tagStyle: Record<MenuTag, string> = {
-  popular: "bg-pink text-white",
-  new: "bg-orange text-white",
-  "must-try": "bg-cyan text-ink",
-};
-
-const tagLabel: Record<MenuTag, string> = {
-  popular: "Popular",
-  new: "New",
-  "must-try": "Must try",
-};
 
 export function MenuSection() {
   const [active, setActive] = React.useState(menu[0].id);
@@ -100,42 +88,21 @@ export function MenuSection() {
             <p className="mb-7 text-center text-sm font-medium text-muted-warm">
               {category.blurb}
             </p>
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
               {category.items.map((item, i) => (
                 <motion.li
                   key={item.id}
                   initial={reduce ? false : { opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: i * 0.05 }}
-                  className="group flex flex-col rounded-2xl border-2 border-border-warm bg-surface p-5 transition-all hover:-translate-y-1 hover:border-ink hover:shadow-[4px_4px_0_0_var(--color-ink)]"
+                  className="h-full"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-display text-lg font-bold leading-snug">
-                      {item.name}
-                    </h3>
-                    <p className="shrink-0 font-display text-lg font-bold text-orange">
-                      ৳{item.price}
-                    </p>
-                  </div>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-warm">
-                    {item.description}
-                  </p>
-                  <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags?.map((tag) => (
-                        <span
-                          key={tag}
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider",
-                            tagStyle[tag]
-                          )}
-                        >
-                          {tagLabel[tag]}
-                        </span>
-                      ))}
-                    </div>
-                    <AddToCartButton item={item} category={category.label} size="sm" />
-                  </div>
+                  <ProductCard
+                    item={item}
+                    category={category.label}
+                    className="h-full"
+                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 46vw, 30vw"
+                  />
                 </motion.li>
               ))}
             </ul>

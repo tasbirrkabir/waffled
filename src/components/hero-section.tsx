@@ -71,10 +71,6 @@ export function HeroSection() {
             starts here.
           </h1>
 
-          <p className="font-bangla text-lg font-medium text-muted-warm sm:text-xl">
-            {siteConfig.taglineBn}।
-          </p>
-
           <p className="max-w-md text-base leading-relaxed text-muted-warm sm:text-lg">
             Waffle pops on a stick, thick shakes and little moments worth sharing, from
             our counter on Radhanagar Road to your hands.
@@ -161,7 +157,7 @@ export function HeroSection() {
 
           {/* Rotating badge */}
           <div
-            className="absolute -right-5 -top-6 flex h-24 w-24 items-center justify-center rounded-full border-2 border-ink bg-pink text-cream shadow-[3px_3px_0_0_var(--color-ink)] sm:-right-8 sm:h-28 sm:w-28"
+            className="absolute -right-3 -top-5 flex h-24 w-24 items-center justify-center rounded-full border-2 border-ink bg-pink text-cream shadow-[3px_3px_0_0_var(--color-ink)] sm:-right-8 sm:-top-6 sm:h-28 sm:w-28"
             aria-hidden
           >
             <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
@@ -175,12 +171,12 @@ export function HeroSection() {
             <Star className="h-6 w-6 fill-cream sm:h-7 sm:w-7" aria-hidden />
           </div>
 
-          {/* small polaroid card */}
+          {/* small polaroid card (desktop only: overlaps the hero image on small screens) */}
           <motion.div
             initial={reduce ? false : { opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="absolute -bottom-8 -left-4 w-28 rotate-6 overflow-hidden rounded-xl border-2 border-ink bg-white p-1.5 shadow-[4px_4px_0_0_var(--color-ink)] sm:-left-10 sm:w-36"
+            className="absolute -bottom-8 -left-4 hidden w-28 rotate-6 overflow-hidden rounded-xl border-2 border-ink bg-white p-1.5 shadow-[4px_4px_0_0_var(--color-ink)] lg:block xl:-left-10 xl:w-36"
             aria-hidden
           >
             <Image

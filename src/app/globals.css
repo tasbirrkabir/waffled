@@ -8,7 +8,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-display: var(--font-space-grotesk);
-  --font-bangla: var(--font-hind-siliguri);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -79,6 +78,9 @@
   }
   html {
     scroll-behavior: smooth;
+    /* Prevents any horizontal wiggle/swipe from off-screen decorative elements
+       (clip keeps position:sticky working, unlike overflow: hidden) */
+    overflow-x: clip;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -112,9 +114,6 @@
   .font-display {
     font-family: var(--font-space-grotesk), var(--font-inter), sans-serif;
   }
-  .font-bangla {
-    font-family: var(--font-hind-siliguri), sans-serif;
-  }
   /* Hand-drawn underline for hero highlight */
   .marker-underline {
     position: relative;
@@ -142,6 +141,13 @@
   }
   .nice-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #f24c8b;
+  }
+}
+
+/* Keep toasts above the mobile action bar + floating cart pill */
+@media (max-width: 767px) {
+  [data-sonner-toaster] {
+    bottom: calc(12rem + env(safe-area-inset-bottom)) !important;
   }
 }
 

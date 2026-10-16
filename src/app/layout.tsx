@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Inter, Hind_Siliguri } from "next/font/google";
+import { Space_Grotesk, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -13,12 +13,6 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-});
-
-const hindSiliguri = Hind_Siliguri({
-  variable: "--font-hind-siliguri",
-  subsets: ["bengali", "latin"],
-  weight: ["400", "600"],
 });
 
 export const metadata: Metadata = {
@@ -72,7 +66,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceGrotesk.variable} ${inter.variable} ${hindSiliguri.variable} font-sans antialiased`}
+        className={`${spaceGrotesk.variable} ${inter.variable} font-sans antialiased`}
       >
         {children}
         <Toaster richColors position="bottom-center" closeButton />

@@ -2,29 +2,23 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, MapPin, Star } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, MapPin, ShoppingBag, Star } from "lucide-react";
 import { menu } from "@/content/menu";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
-import { AddToCartButton } from "@/components/order/add-to-cart-button";
+import { cartCount, cartSubtotal, formatTk, useCart } from "@/lib/cart-store";
+import { ProductCard } from "@/components/order/product-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const tagStyles: Record<string, string> = {
-  popular: "bg-pink text-white",
-  new: "bg-orange text-white",
-  "must-try": "bg-cyan text-ink",
-};
-
-const tagLabels: Record<string, string> = {
-  popular: "Popular",
-  new: "New",
-  "must-try": "Must try",
-};
 
 export function MenuPageContent() {
   const [active, setActive] = React.useState(menu[0].id);
   const sectionRefs = React.useRef<Record<string, HTMLElement | null>>({});
+  const lines = useCart((s) => s.lines);
+
+  const itemCount = cartCount(lines);
+  const subtotal = cartSubtotal(lines);
 
   React.useEffect(() => {
     const observer = new IntersectionObserver(
@@ -43,9 +37,9 @@ export function MenuPageContent() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-28 pt-24 sm:px-6 md:pb-24 md:pt-28">
       {/* Heading */}
-      <div className="flex flex-col items-start gap-5 pt-28 md:pt-32">
+      <div className="flex flex-col items-start gap-5">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-ink shadow-[2px_2px_0_0_var(--color-ink)]">
             <MapPin className="h-3.5 w-3.5 text-pink" aria-hidden />
@@ -61,7 +55,7 @@ export function MenuPageContent() {
             {siteConfig.rating.value} on Google, {siteConfig.rating.count} reviews
           </a>
         </div>
-        <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
           The <span className="text-pink">menu</span>, front to back.
         </h1>
         <p className="max-w-xl text-base leading-relaxed text-muted-warm sm:text-lg">
@@ -82,7 +76,7 @@ export function MenuPageContent() {
                 href={`#${cat.id}`}
                 onClick={() => setActive(cat.id)}
                 className={cn(
-                  "inline-flex whitespace-nowrap rounded-full border-2 px-4 py-2 text-sm font-bold transition-all",
+                  "inline-flex min-h-11 whitespace-nowrap rounded-full border-2 px-4 py-2 text-sm font-bold transition-all",
                   active === cat.id
                     ? "border-ink bg-ink text-cream shadow-[2.5px_2.5px_0_0_rgba(32,23,25,0.25)]"
                     : "border-ink/20 bg-white text-ink hover:border-ink"
@@ -131,44 +125,16 @@ export function MenuPageContent() {
               </p>
             </div>
 
-            <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cat.items.map((item) => (
-                <li
-                  key={item.id}
-                  className="group flex flex-col justify-between gap-3 rounded-2xl border-2 border-ink/15 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-ink hover:shadow-[4px_4px_0_0_var(--color-ink)]"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-display text-lg font-bold leading-tight">{item.name}</h3>
-                      <p className="whitespace-nowrap font-display text-lg font-bold text-pink tabular-nums">
-                        ৳{item.price}
-                      </p>
-                    </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-warm">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags?.map((tag) => (
-                        <span
-                          key={tag}
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider",
-                            tagStyles[tag]
-                          )}
-                        >
-                          {tagLabels[tag]}
-                        </span>
-                      ))}
-                    </div>
-                    <AddToCartButton
-                      item={item}
-                      category={cat.label}
-                      size="sm"
-                      className="shrink-0"
-                    />
-                  </div>
+            <ul className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              {cat.items.map((item, i) => (
+                <li key={item.id} className="h-full">
+                  <ProductCard
+                    item={item}
+                    category={cat.label}
+                    className="h-full"
+                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 31vw, 23vw"
+                    priority={ci === 0 && i < 4}
+                  />
                 </li>
               ))}
             </ul>
@@ -209,6 +175,44 @@ export function MenuPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Floating cart pill (appears when items are in the cart) */}
+      <AnimatePresence>
+        {itemCount > 0 && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            className="fixed inset-x-0 bottom-[calc(3.75rem_+_env(safe-area-inset-bottom))] z-40 px-4 md:bottom-6"
+          >
+            <Link
+              href="/order"
+              onClick={() => trackEvent("menu_click")}
+              className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 rounded-2xl border-[3px] border-ink bg-ink px-5 py-3.5 text-cream shadow-[4px_4px_0_0_rgba(32,23,25,0.3)] transition-transform active:scale-[0.98] md:max-w-md"
+            >
+              <span className="flex items-center gap-2.5">
+                <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-pink text-white">
+                  <ShoppingBag className="h-4.5 w-4.5" aria-hidden />
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-ink bg-lime px-1 text-[0.6rem] font-bold text-ink tabular-nums">
+                    {itemCount}
+                  </span>
+                </span>
+                <span className="text-left">
+                  <span className="block text-xs font-medium text-cream/70">Your order</span>
+                  <span className="block font-display text-base font-bold tabular-nums">
+                    {formatTk(subtotal)}
+                  </span>
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5 font-display text-sm font-bold text-lime">
+                Checkout
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </span>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -2,7 +2,6 @@ export const siteConfig = {
   name: "Waffled",
   legalName: "Waffled Sreemangal",
   tagline: "Waffles, shakes & little moments worth sharing",
-  taglineBn: "মিষ্টি কিছু খাওয়ার সময় হয়েছে",
   description:
     "Waffle pops, shakes and snacks in Sreemangal. Check the menu, opening hours and directions to our shop in Radhanagar, Sreemangal, Bangladesh.",
   phoneDisplay: "+880 1723-399638",
