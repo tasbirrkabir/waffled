@@ -307,3 +307,93 @@ Stage Summary:
 - The "overlap" was content bleeding through the 90%-opaque fixed header on scroll — header is now solid cream everywhere (header, menu chips, mobile action bar)
 - Checkout page headers now stack into one tidy left-aligned column on mobile with a single-line progress indicator
 - Files changed: site-header.tsx, order-page-content.tsx (CheckoutSteps + 2 header rows), menu-page-content.tsx, mobile-action-bar.tsx
+
+---
+Task ID: 8-a (part 1)
+Agent: main (Z.ai Code)
+Task: Admin panel — database, auth and admin APIs (user request: "Admin panel banao ekhon product management order management etc diye analysis o diba. Product add remove edit jate kora jay and product add e product image upload er option o diba. Featured image home e shuru te je oita and signature pick egula change korar option diba admin panel e")
+
+Work Log:
+- Prisma schema: added Category (id,label,blurb,sortOrder), Product (id,name,description,price,image,imageAlt,tags CSV,categoryId,isActive,isSignature,signatureTag,signatureDescription,signatureSort,sortOrder), SiteSetting (key-value). Order.status values documented: new|confirmed|preparing|ready|completed|cancelled. db:push run.
+- scripts/seed-menu.ts (run with bun): seeded 4 categories + 27 products + 3 signature picks (strawberry-swirl/oreo-crunch/nutella-crunch) + hero settings from src/content/menu.ts. Product/category IDs match the static content so existing carts stay valid.
+- src/lib/admin-auth.ts: cookie auth. Cookie name waffled_admin, token = sha256("waffled::PASSWORD::v1"), httpOnly, 12h. Password: env ADMIN_PASSWORD, default "waffled-admin-2026". Helpers: isAdminRequest(request), unauthorized().
+- src/lib/menu-data.ts: getMenu() / getSignaturePicks() / getHeroImage() — read live DB, fall back to static menu.ts on error/empty. Server-side only.
+- DEV SERVER NOTE: after prisma schema changes the dev server MUST be restarted (PrismaClient is cached in-process) — already restarted.
+
+ADMIN API CONTRACT (all under /api/admin, all return 401 {success:false,error:"Admin login required."} when the cookie is missing):
+- POST /api/admin/login {password} -> {success:true} + sets cookie. Rate limited 5/min.
+- POST /api/admin/logout -> {success:true} (clears cookie)
+- GET /api/admin/session -> {authenticated:boolean}
+- GET /api/admin/products -> {success, products:[{id,name,description,price,image,imageAlt,tags[],categoryId,categoryLabel,isActive,isSignature,signatureTag,signatureDescription,signatureSort,sortOrder,updatedAt}]}
+- POST /api/admin/products {name,description,price,categoryId,image,imageAlt,tags[],isActive,isSignature,signatureTag,signatureDescription} -> {success,product} (id auto-slugged)
+- PATCH /api/admin/products {id, ...optional fields} -> {success,product}
+- DELETE /api/admin/products?id=xxx -> {success}
+- GET /api/admin/categories -> {success,categories:[{id,label,blurb,sortOrder,productCount}]}
+- POST /api/admin/categories {label,blurb} / PATCH {id,label?,blurb?,sortOrder?} / DELETE ?id= (409 if not empty)
+- POST /api/admin/upload multipart (file, type="product"|"site") -> {success,url:"/uploads/<type>/<name>.webp"} — sharp converts to WebP max 1200x1200, 8MB limit, JPG/PNG/WebP only
+- GET /api/admin/orders?status=&q=&limit= -> {success,orders:[{id,orderNumber,customerName,phone,fulfillment,address,pickupTime,paymentMethod,trxId,notes,items[{id,name,price,qty}],total,status,createdAt}]}
+- PATCH /api/admin/orders {id,status} status in new|confirmed|preparing|ready|completed|cancelled -> {success,order}
+- DELETE /api/admin/orders?id= -> {success}
+- GET /api/admin/settings -> {success,settings:{heroImage,heroImageAlt}}
+- PATCH /api/admin/settings {heroImage?,heroImageAlt?} -> {success,settings}
+- GET /api/admin/analytics -> {success,stats:{totalOrders,totalRevenue,todayOrders,todayRevenue,pendingOrders,activeProducts},daily:[{date,label,orders,revenue}]x14 (Dhaka days, oldest first),topProducts:[{name,qty,revenue}]x5,statusBreakdown:[{status,count}],recentOrders:[{id,orderNumber,customerName,total,status,itemCount,createdAt}]x8}
+
+Smoke tested with curl: login/session, all GETs (27 products, 4 categories, settings, analytics, orders), product create/update/delete, image upload (serves 200), order status update, category create/delete. All green.
+
+Stage Summary:
+- DB models + seed + auth + complete admin API layer done and verified
+- Next: public site reads from DB (menu-data.ts), then /admin UI (Task 8-b subagent)
+
+---
+Task ID: 8-b
+Agent: full-stack-developer (subagent)
+Task: Build /admin panel UI (login + Dashboard/Products/Orders/Content tabs)
+
+Work Log:
+- Read worklog.md (8-a API contracts), all /api/admin/* route sources, site-header.tsx, cart-store.ts (formatTk), globals.css brand tokens, order-page-content.tsx (fulfillment/payment/pickupTime value sets), menu-data.ts (hero/signature fallbacks)
+- Built one client route src/app/admin/page.tsx + 14 support files in src/components/admin/ (api, types, use-admin-data, utils, status-badge, ui-bits, login-screen, admin-header, dashboard-tab, products-tab, product-dialog, category-manager, orders-tab, content-tab) — no other routes, no files touched outside src/app/admin/** and src/components/admin/**
+- api.ts: fetch wrapper (relative URLs only). 401 → registered handler flips page to login + "Session expired" toast (2s dedupe) and throws UnauthorizedError (callers skip error toasts); uploadImage(file, "product"|"site"). LoginScreen deliberately uses plain fetch so a wrong-password 401 is NOT treated as session expiry
+- useAdminData hook: effect deps [loader, nonce]; loader useCallback'd per tab so filter/search changes refetch; stale responses discarded; loading flip moved to a microtask to satisfy react-hooks/set-state-in-effect (lint was an error otherwise)
+- Login screen: centered hard-shadow card, logo, password input, inline + toast errors, focus/select on failure; test password only in a code comment (waffled-admin-2026 via ADMIN_PASSWORD env). Page probes GET /api/admin/session on mount; logout POSTs /api/admin/logout then shows login
+- Dashboard: 6 stat cards (cyan/lime/orange/pink/purple/cream icon chips); recharts ComposedChart — Area revenue #F24C8B with gradient fill (left axis, ৳ compact ticks) + Bar orders #BCE84A with ink stroke (right axis), X = daily label, custom hard-shadow tooltip; top products (formatTk); status breakdown solid chips; recent orders table md+ / card list mobile (timeAgo + full title)
+- Products: count header, Categories dialog (add label+blurb, inline rename, delete disabled while non-empty), Add product dialog — name/category Select/price/description, tag checkboxes (popular=pink, new=orange, must-try=cyan), image upload → /api/admin/upload (type=product) with live preview + Remove + alt text, active + signature switches (signature reveals badge-label input + card-copy textarea); list = table md+ / cards mobile with 48/64px next/image thumbs; per-row quick toggles (Eye/EyeOff active, Star signature, optimistic + revert) and AlertDialog deletes
+- Orders: status chips (All + 6) + 300ms-debounced search (orderNumber/name/phone); desktop table with expandable second <tr>, mobile cards with expand button — both share OrderDetails (items with per-line totals, delivery address / pickup time, payment + TrxID chip, notes card); status Select → PATCH + toast + reload; tel: links; AlertDialog delete
+- Content: hero section — 16:10 next/image preview with Custom/Default badge, upload (type=site), alt input, "Use default" (heroImage "" → site falls back to /images/hero-waffle-gmaps.webp), Save → PATCH /api/admin/settings; signature picks — checkboxes over ALL active products grouped by category (max-h-96 scroll), optimistic PATCH {id, isSignature} with revert, helper text points to Products tab for badge label + card copy
+- Styling throughout: cream bg, white surface cards border-2 border-ink/10 rounded-2xl, font-display, hard offset shadows on primary buttons only (utilitarian elsewhere), ৳ formatTk, date-fns, no blue/indigo; sticky header + mt-auto footer (min-h-screen flex-col); aria labels, sr-only text, keyboard-reachable file inputs
+- Verified: bun run lint clean; bunx tsc --noEmit → zero errors in admin files (6 pre-existing errors elsewhere: examples/, skills/, 8-a route spread-typing — all pre-existing, runtime-verified); curl smoke: wrong password 401+message, correct password sets cookie, session probes, analytics, orders search; GET /admin 200 and dev.log clean for these files (only the pre-existing root-layout metadataBase warning)
+
+Stage Summary:
+- Files created: src/app/admin/page.tsx + src/components/admin/{api.ts, types.ts, use-admin-data.ts, utils.ts, status-badge.tsx, ui-bits.tsx, login-screen.tsx, admin-header.tsx, dashboard-tab.tsx, products-tab.tsx, product-dialog.tsx, category-manager.tsx, orders-tab.tsx, content-tab.tsx}
+- Key decisions: 401 global handler via module-level registration (page dedupes toasts); login uses plain fetch (wrong-password 401 ≠ session expiry); tabs refetch on mount (Radix unmounts inactive tabs) — acceptable for an admin tool; quick toggles + signature checkboxes are optimistic with revert; Content "Use default" persists heroImage:"" so the site falls back to the stock photo
+- Known caveats for browser verification: login/logout/session-expiry flows, image upload previews, chart on 390px (X labels auto-skip), category delete disabled while non-empty (title explains), orders expanded row keeps state across reloads
+
+---
+Task ID: 8-a (part 2)
+Agent: main (Z.ai Code)
+Task: Public site integration with the admin-managed DB + full verification of the admin panel
+
+Work Log:
+- Public pages now read live data from DB via src/lib/menu-data.ts (getMenu/getSignaturePicks/getHeroImage, each with static-menu fallback):
+  - app/page.tsx: force-dynamic, fetches menu+picks+hero, passes props to HeroSection/SignatureSection/MenuSection
+  - app/menu/page.tsx: force-dynamic, JSON-LD menu built from live DB data, passes categories to MenuPageContent
+  - app/order/page.tsx: force-dynamic, passes categories to OrderPageContent
+- Components switched from importing static `menu` to props (with fallback): hero-section.tsx (heroImage prop), signature-section.tsx (picks prop), menu-section.tsx, menu-page-content.tsx, order-page-content.tsx (categories prop)
+- /api/orders: re-prices order lines from the DB (active products only) instead of static menu.ts — hidden products can no longer be ordered
+- Integration with 8-b admin UI verified end-to-end in agent-browser (desktop 1280x800 + mobile 390x844)
+
+Verification results (all green):
+- Public: home renders hero image + 3 signature picks + 10 menu cards from DB; /menu 27 cards in 4 categories; /order tabs work
+- Admin login: wrong password → inline error + toast; correct password → panel; logout → back to login
+- Dashboard: 6 stat cards, recharts 14-day chart, top products, status chips, recent orders (VLM verified)
+- Products: 27 rows; ADD product with image upload (sharp→WebP, preview, /uploads/product/...) → appears in admin table AND live on home + /menu; EDIT price 259→299 → reflected; signature quick-toggle → home signature section updated live (4th pick appeared); DELETE with confirm → removed from table + public site
+- Orders: filter chips, expandable rows (items/payment/trxId/address), status change WF-0002 new→preparing→new persisted to DB
+- Content: hero image upload + Save → home hero src changed live; "Use default" restores stock; signature checkboxes per product
+- Mobile admin: login + dashboard (2-col stat grid, chart, no horizontal scroll), products render as cards (27), table hidden
+- Golden path re-test: add→checkout→place order → "Order placed!" (POST /api/orders 200, re-priced from DB)
+- bun run lint clean; test order + test uploads cleaned from DB/filesystem
+
+Stage Summary:
+- Complete admin panel shipped: /admin (password waffled-admin-2026, override via ADMIN_PASSWORD env) with Dashboard/Products/Orders/Content tabs
+- Product management (add/edit/delete/hide/signature) with image upload, category management, order status management, hero image + signature picks editing, analytics with Dhaka-timezone 14-day chart
+- Public site fully DB-driven with static fallback; changes reflect instantly (force-dynamic)
+- Key files: prisma/schema.prisma (Category/Product/SiteSetting), scripts/seed-menu.ts, src/lib/admin-auth.ts, src/lib/menu-data.ts, src/app/api/admin/* (9 routes), src/app/admin/page.tsx + src/components/admin/* (8-b), updated pages/components/api-orders

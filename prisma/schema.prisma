@@ -42,9 +42,59 @@ model Order {
   notes        String?
   items        String // JSON-encoded [{id,name,price,qty}]
   total        Int
+  // "new" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled"
   status       String   @default("new")
   createdAt    DateTime @default(now())
 
   @@index([createdAt])
   @@index([status])
+}
+
+// Menu categories shown on the site (managed from the admin panel)
+model Category {
+  id        String    @id
+  label     String
+  blurb     String    @default("")
+  sortOrder Int       @default(0)
+  products  Product[]
+
+  @@index([sortOrder])
+}
+
+// Menu items managed from the admin panel
+model Product {
+  id          String   @id
+  name        String
+  description String   @default("")
+  // Price in taka (integer)
+  price       Int
+  image       String   @default("")
+  imageAlt    String   @default("")
+  // Comma-separated tags: "popular", "new", "must-try"
+  tags        String   @default("")
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  // Hidden from the public site when false
+  isActive    Boolean  @default(true)
+  // Shown in the "Signature picks" section on the home page
+  isSignature Boolean  @default(false)
+  // Small badge label on the signature card, e.g. "Must try"
+  signatureTag String  @default("")
+  // Optional longer copy for the signature card (falls back to description)
+  signatureDescription String @default("")
+  // Order within the signature section
+  signatureSort Int    @default(0)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isSignature])
+}
+
+// Simple key-value store for editable site content (hero image, etc.)
+model SiteSetting {
+  key   String @id
+  value String
 }

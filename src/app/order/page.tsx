@@ -3,6 +3,9 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MobileActionBar } from "@/components/mobile-action-bar";
 import { OrderPageContent } from "@/components/order/order-page-content";
+import { getMenu } from "@/lib/menu-data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Order Online, Pickup in Sreemangal",
@@ -11,12 +14,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/order" },
 };
 
-export default function OrderPage() {
+export default async function OrderPage() {
+  const menu = await getMenu();
+
   return (
     <div className="flex min-h-screen flex-col bg-cream text-ink">
       <SiteHeader />
       <main id="main" className="flex-1">
-        <OrderPageContent />
+        <OrderPageContent categories={menu} />
       </main>
       <SiteFooter />
       <MobileActionBar />

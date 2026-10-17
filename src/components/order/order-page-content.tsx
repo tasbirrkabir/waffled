@@ -20,7 +20,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
-import { menu } from "@/content/menu";
+import { menu as fallbackMenu } from "@/content/menu";
+import type { MenuCategory } from "@/content/menu";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
 import { cartSubtotal, formatTk, useCart, type CartLine } from "@/lib/cart-store";
@@ -167,7 +168,8 @@ function CartLineRow({
 
 /* ------------------------------ Main component ---------------------------- */
 
-export function OrderPageContent() {
+export function OrderPageContent({ categories }: { categories: MenuCategory[] }) {
+  const menu = categories.length > 0 ? categories : fallbackMenu;
   const lines = useCart((s) => s.lines);
   const increment = useCart((s) => s.increment);
   const decrement = useCart((s) => s.decrement);
@@ -175,7 +177,7 @@ export function OrderPageContent() {
   const clear = useCart((s) => s.clear);
 
   const [step, setStep] = React.useState<Step>(1);
-  const [activeCat, setActiveCat] = React.useState(menu[0].id);
+  const [activeCat, setActiveCat] = React.useState(menu[0]?.id ?? "");
   const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [fulfillment, setFulfillment] = React.useState<Fulfillment>("pickup");
@@ -211,7 +213,6 @@ export function OrderPageContent() {
     !submitting;
 
   const category = menu.find((c) => c.id === activeCat) ?? menu[0];
-
   function goToStep(next: Step) {
     setStep(next);
     window.scrollTo({ top: 0, behavior: "smooth" });

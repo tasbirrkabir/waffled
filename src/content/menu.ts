@@ -17,6 +17,17 @@ export interface MenuCategory {
   items: MenuItem[];
 }
 
+/** Shape used by the home page "Signature picks" section */
+export interface SignaturePick {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  alt: string;
+  tag: string;
+}
+
 /**
  * Menu synced with the shop's official sources:
  * Basic Flavours Waffle from the Google Maps listing (updated by the owner,

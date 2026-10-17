@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { menu } from "@/content/menu";
 import { siteConfig } from "@/content/site";
 
 export const runtime = "nodejs";
@@ -81,15 +80,18 @@ const orderSchema = baseOrderSchema.superRefine((data, ctx) => {
   }
 });
 
-/** Flat lookup of every menu item, id -> {name, price, category} */
-const menuLookup = new Map(
-  menu.flatMap((cat) =>
-    cat.items.map((item) => [
-      item.id,
-      { name: item.name, price: item.price, category: cat.label },
-    ])
-  )
-);
+/** Flat lookup of every active menu item, id -> {name, price, category} */
+async function buildMenuLookup(): Promise<
+  Map<string, { name: string; price: number; category: string }>
+> {
+  const products = await db.product.findMany({
+    where: { isActive: true },
+    include: { category: true },
+  });
+  return new Map(
+    products.map((p) => [p.id, { name: p.name, price: p.price, category: p.category.label }])
+  );
+}
 
 function formatTk(amount: number): string {
   return `৳${amount.toLocaleString("en-IN")}`;
@@ -176,7 +178,8 @@ export async function POST(request: Request) {
   const { customerName, phone, fulfillment, address, pickupTime, paymentMethod, trxId, notes, items } =
     parsed.data;
 
-  // Re-price every line from the trusted menu (client prices are ignored)
+  // Re-price every line from the trusted live menu (client prices are ignored)
+  const menuLookup = await buildMenuLookup();
   const priced: { id: string; name: string; price: number; qty: number; category: string }[] = [];
   for (const line of items) {
     const found = menuLookup.get(line.id);

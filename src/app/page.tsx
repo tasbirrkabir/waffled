@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { MobileActionBar } from "@/components/mobile-action-bar";
 import { FloatingCartPill } from "@/components/order/floating-cart-pill";
 import { siteConfig } from "@/content/site";
+import { getHeroImage, getMenu, getSignaturePicks } from "@/lib/menu-data";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -43,6 +44,7 @@ const jsonLd = {
   },
   sameAs: [siteConfig.socials.facebook, siteConfig.socials.instagram],
   hasMap: siteConfig.mapsUrl,
+  // Menu data is fetched per-request in the page component (admin-managed)
   openingHoursSpecification: siteConfig.hours.days.map((d) => {
     const [oh, om] = d.open.split(":");
     const [ch, cm] = d.close.split(":");
@@ -55,7 +57,13 @@ const jsonLd = {
   }),
 };
 
-export default function Home() {
+// Menu, signature picks and the hero image are managed from /admin — always
+// render fresh so edits show up immediately.
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [menu, picks, hero] = await Promise.all([getMenu(), getSignaturePicks(), getHeroImage()]);
+
   return (
     <div className="flex min-h-screen flex-col bg-cream text-ink">
       <script
@@ -64,9 +72,9 @@ export default function Home() {
       />
       <SiteHeader />
       <main id="main" className="flex-1">
-        <HeroSection />
-        <SignatureSection />
-        <MenuSection />
+        <HeroSection heroImage={hero} />
+        <SignatureSection picks={picks} />
+        <MenuSection categories={menu} />
         <AboutSection />
         <GallerySection />
         <ReviewsSection />

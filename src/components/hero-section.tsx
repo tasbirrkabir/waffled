@@ -18,7 +18,12 @@ const marqueeItems = [
   "PRESSED FRESH",
 ];
 
-export function HeroSection() {
+interface Props {
+  /** Hero image managed from the admin panel (Content tab) */
+  heroImage: { src: string; alt: string };
+}
+
+export function HeroSection({ heroImage }: Props) {
   const reduce = useReducedMotion();
 
   return (
@@ -138,8 +143,8 @@ export function HeroSection() {
         >
           <div className="relative overflow-hidden rounded-[2rem] border-[3px] border-ink bg-white shadow-[8px_8px_0_0_var(--color-ink)]">
             <Image
-              src="/images/hero-waffle-gmaps.webp"
-              alt="Chocolate-glazed waffle pops on sticks served in purple boxes at Waffled Sreemangal"
+              src={heroImage.src}
+              alt={heroImage.alt}
               width={900}
               height={1125}
               priority

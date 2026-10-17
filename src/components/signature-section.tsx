@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { signaturePicks } from "@/content/menu";
+import type { SignaturePick } from "@/content/menu";
 
 const tagStyles: Record<string, string> = {
   "Must try": "bg-pink text-white",
@@ -12,7 +12,12 @@ const tagStyles: Record<string, string> = {
   "Crowd favourite": "bg-orange text-white",
 };
 
-export function SignatureSection() {
+interface Props {
+  /** Signature picks managed from the admin panel (Products tab) */
+  picks: SignaturePick[];
+}
+
+export function SignatureSection({ picks }: Props) {
   const reduce = useReducedMotion();
 
   return (
@@ -37,7 +42,7 @@ export function SignatureSection() {
         </motion.div>
 
         <div className="grid gap-8 sm:gap-6 md:grid-cols-3 md:gap-8">
-          {signaturePicks.map((item, i) => (
+          {picks.map((item, i) => (
             <motion.article
               key={item.id}
               initial={reduce ? false : { opacity: 0, y: 32 }}

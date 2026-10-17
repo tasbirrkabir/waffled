@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, MapPin, Star } from "lucide-react";
-import { menu } from "@/content/menu";
+import { menu as fallbackMenu } from "@/content/menu";
+import type { MenuCategory } from "@/content/menu";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
 import { ProductCard } from "@/components/order/product-card";
@@ -11,8 +12,14 @@ import { FloatingCartPill } from "@/components/order/floating-cart-pill";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function MenuPageContent() {
-  const [active, setActive] = React.useState(menu[0].id);
+interface Props {
+  /** Live menu from the admin panel */
+  categories: MenuCategory[];
+}
+
+export function MenuPageContent({ categories }: Props) {
+  const menu = categories.length > 0 ? categories : fallbackMenu;
+  const [active, setActive] = React.useState(menu[0]?.id ?? "");
   const sectionRefs = React.useRef<Record<string, HTMLElement | null>>({});
 
   React.useEffect(() => {
