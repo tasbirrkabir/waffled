@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { saveAdminSession } from "@/components/admin/api";
 
 export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [password, setPassword] = React.useState("");
@@ -41,8 +42,13 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
         body: JSON.stringify({ password: pw }),
       });
       const body =
-        (await res.json().catch(() => null)) as { success?: boolean; error?: string } | null;
+        (await res.json().catch(() => null)) as
+          | { success?: boolean; error?: string; token?: string }
+          | null;
       if (res.ok && body?.success) {
+        // Keep the token for the x-admin-token header (cookies are blocked
+        // inside cross-site iframes, e.g. the chat preview panel).
+        if (body.token) saveAdminSession(body.token);
         toast.success("Welcome back!");
         onLoggedIn();
         return;

@@ -4,6 +4,10 @@
  * Tiny fetch wrapper for the admin API.
  *
  * - Always uses RELATIVE urls ("/api/admin/...").
+ * - Sends the stored admin session token via the x-admin-token header.
+ *   Browsers block session cookies inside cross-site iframes (chat preview
+ *   panel), so the token in localStorage is what actually authenticates
+ *   there; in normal tabs the cookie works too — both are accepted.
  * - Any 401 fires the registered unauthorized handler (the /admin page flips
  *   back to the login screen with a "Session expired" toast) and throws
  *   UnauthorizedError so callers can silently stop.
@@ -17,6 +21,64 @@ export class UnauthorizedError extends Error {
     super("Session expired");
     this.name = "UnauthorizedError";
   }
+}
+
+// --- localStorage session (iframe-safe) -------------------------------------
+
+const SESSION_KEY = "waffled_admin_session";
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // mirrors the cookie's 12h max-age
+
+interface StoredSession {
+  token: string;
+  expiresAt: number;
+}
+
+/** Persist the admin session token after a successful login. */
+export function saveAdminSession(token: string) {
+  try {
+    const session: StoredSession = { token, expiresAt: Date.now() + SESSION_TTL_MS };
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // storage unavailable (private mode etc.) — the cookie still carries the session
+  }
+}
+
+/** Drop the stored session (logout or stale token after a 401). */
+export function clearAdminSession() {
+  try {
+    window.localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** Valid, unexpired stored token — or null (auto-cleaned when expired). */
+function storedSessionToken(): string | null {
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const session = JSON.parse(raw) as Partial<StoredSession>;
+    if (
+      typeof session.token !== "string" ||
+      typeof session.expiresAt !== "number" ||
+      session.expiresAt <= Date.now()
+    ) {
+      window.localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return session.token;
+  } catch {
+    return null;
+  }
+}
+
+/** Auth headers for admin requests (token header works inside iframes). */
+function authHeaders(json: boolean): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (json) headers["Content-Type"] = "application/json";
+  const token = storedSessionToken();
+  if (token) headers["x-admin-token"] = token;
+  return headers;
 }
 
 type UnauthorizedHandler = () => void;
@@ -62,9 +124,12 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 /** Fetch an admin endpoint. Throws UnauthorizedError on 401, Error otherwise. */
 export async function api<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const init: RequestInit = { method: opts.method ?? "GET" };
-  if (opts.json !== undefined) {
-    init.headers = { "Content-Type": "application/json" };
+  const hasJson = opts.json !== undefined;
+  const init: RequestInit = {
+    method: opts.method ?? "GET",
+    headers: authHeaders(hasJson),
+  };
+  if (hasJson) {
     init.body = JSON.stringify(opts.json);
   }
   let res: Response;
@@ -86,7 +151,11 @@ export async function uploadImage(file: File, type: "product" | "site"): Promise
   form.append("type", type);
   let res: Response;
   try {
-    res = await fetch("/api/admin/upload", { method: "POST", body: form });
+    res = await fetch("/api/admin/upload", {
+      method: "POST",
+      body: form,
+      headers: authHeaders(false),
+    });
   } catch {
     throw new Error("Upload failed — check your connection and try again.");
   }

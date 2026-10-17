@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Cookie, LayoutDashboard, Loader2, ShoppingBag, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminHeader } from "@/components/admin/admin-header";
-import { api, registerUnauthorizedHandler } from "@/components/admin/api";
+import { api, clearAdminSession, registerUnauthorizedHandler } from "@/components/admin/api";
 import { ContentTab } from "@/components/admin/content-tab";
 import { DashboardTab } from "@/components/admin/dashboard-tab";
 import { LoginScreen } from "@/components/admin/login-screen";
@@ -31,6 +31,7 @@ export default function AdminPage() {
   React.useEffect(() => {
     registerUnauthorizedHandler(() => {
       const now = Date.now();
+      clearAdminSession(); // stored token is stale — drop it
       setAuthed(false);
       if (now - last401Ref.current > 2000) {
         last401Ref.current = now;
@@ -61,6 +62,7 @@ export default function AdminPage() {
   async function handleLogout() {
     if (loggingOut) return;
     setLoggingOut(true);
+    clearAdminSession();
     try {
       await api("/api/admin/logout", { method: "POST" });
     } catch {

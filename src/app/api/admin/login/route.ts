@@ -41,10 +41,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const res = NextResponse.json({ success: true });
-  res.cookies.set(ADMIN_COOKIE, adminToken(), {
+  const token = adminToken();
+  const res = NextResponse.json({
+    success: true,
+    // The client stores this token and replays it via the x-admin-token
+    // header — required inside cross-site iframes where the cookie below
+    // is blocked by the browser.
+    token,
+    expiresIn: ADMIN_SESSION_MAX_AGE,
+  });
+  res.cookies.set(ADMIN_COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
+    // SameSite=None + Secure + Partitioned so the cookie also survives
+    // third-party iframe contexts when the browser allows it; the token
+    // header is the fallback everywhere else.
+    sameSite: "none",
+    secure: true,
+    partitioned: true,
     path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE,
   });

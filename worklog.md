@@ -397,3 +397,40 @@ Stage Summary:
 - Product management (add/edit/delete/hide/signature) with image upload, category management, order status management, hero image + signature picks editing, analytics with Dhaka-timezone 14-day chart
 - Public site fully DB-driven with static fallback; changes reflect instantly (force-dynamic)
 - Key files: prisma/schema.prisma (Category/Product/SiteSetting), scripts/seed-menu.ts, src/lib/admin-auth.ts, src/lib/menu-data.ts, src/app/api/admin/* (9 routes), src/app/admin/page.tsx + src/components/admin/* (8-b), updated pages/components/api-orders
+
+---
+Task ID: 9
+Agent: main (Z.ai Code)
+Task: Fix "Session expired" error on /admin login screen (screenshot upload/Screenshot_20261017-071719.png)
+
+User request: "What's this issue" — screenshot showed the WAFFLED Admin login screen with a "Session expired / Please sign in again." toast covering the Sign in button.
+
+Diagnosis:
+- The user views the site through the chat.z.ai preview panel, which renders it inside a CROSS-SITE IFRAME.
+- The admin session cookie was set with SameSite=Lax + HttpOnly — browsers refuse to store/send such cookies in third-party iframe contexts.
+- So: login POST succeeded → panel mounted → first data fetch had NO cookie → 401 → global handler flipped back to the login screen with a "Session expired" toast. Exactly the screenshot.
+- (Task 8 verification missed this because agent-browser is a first-party context where cookies work.)
+
+Fix — dual-path admin auth (cookie OR bearer-style header):
+1. src/lib/admin-auth.ts: added ADMIN_TOKEN_HEADER = "x-admin-token"; isAdminRequest() now accepts a valid waffled_admin cookie OR a valid x-admin-token header (both timing-safe compared against the same sha256 token).
+2. src/app/api/admin/login/route.ts: response body now includes { token, expiresIn: 43200 }; cookie upgraded to sameSite:"none", secure:true, partitioned:true (CHIPS — best effort inside iframes; header is the reliable path).
+3. src/components/admin/api.ts: localStorage session store — saveAdminSession(token) / clearAdminSession() (key waffled_admin_session, {token, expiresAt}, 12h TTL mirroring the cookie, auto-clean when expired); api() and uploadImage() attach the x-admin-token header on every admin request.
+4. src/components/admin/login-screen.tsx: saves body.token via saveAdminSession() on successful login.
+5. src/app/admin/page.tsx: 401 handler now also clearAdminSession() (stale token dropped); handleLogout() clears the stored session too.
+
+Verification (curl + agent-browser):
+- curl: login returns token in body + sets cookie; header-only auth (no cookie) → products/analytics/orders all 200; no auth → 401; bad token → 401; session probe 200 {authenticated:false} without auth (no spurious toast on fresh visits)
+- Browser fresh visit /admin: login screen, ZERO toasts (bug symptom gone)
+- Wrong password: inline "Wrong password" error + matching toast only — no "Session expired"
+- Correct password: panel loads, "Welcome back!" toast, token in localStorage (12h), stats render (real DB data)
+- Reload: still authed; cleared ALL cookies (true iframe simulation) + reload: STILL AUTHED via header, dashboard fully rendered, zero toasts — this exact scenario was the bug
+- All tabs with zero cookies: Products (27 rows), Orders (filters), Content (hero + signature) all load via header auth
+- Logout: login screen + localStorage cleared + "Logged out" toast
+- Corrupt token on fresh visit: silent login screen (probe returns 200, not 401)
+- Genuine mid-session expiry (cookies cleared + token corrupted while logged in): tab fetch 401 → login screen + "Session expired" toast + stale token dropped — the toast now only appears when it should
+- No browser console errors; bun run lint clean; tsc: only the 6 known pre-existing errors (examples/, skills/, 8-a spread typing); dev.log clean; public / /menu /order all 200; user's 2 real orders in DB left untouched
+
+Stage Summary:
+- Admin auth is now iframe-proof: cookie (normal tabs) + x-admin-token header from localStorage (preview panel / any cookie-blocked context), both accepted server-side
+- "Session expired" toast now appears ONLY on genuine mid-session 401s (e.g. password changed), never on fresh visits or inside the preview iframe
+- Files changed: src/lib/admin-auth.ts, src/app/api/admin/login/route.ts, src/components/admin/api.ts, src/components/admin/login-screen.tsx, src/app/admin/page.tsx
