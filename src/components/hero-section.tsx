@@ -10,12 +10,12 @@ import { trackEvent } from "@/lib/track";
 import { Button } from "@/components/ui/button";
 
 const marqueeItems = [
-  "WAFFLE POPS ON A STICK",
-  "NUTELLA LOVE",
+  "DEMO WAFFLE POPS",
+  "DEMO DELIGHTS",
   "THICK SHAKES",
-  "NEW: OREO CRUNCH",
-  "RADHANAGAR ROAD, SREEMANGAL",
-  "PRESSED FRESH",
+  "DEMO SPECIALS",
+  "123 DEMO STREET",
+  "FRESHLY PREPARED",
 ];
 
 interface Props {
@@ -77,8 +77,8 @@ export function HeroSection({ heroImage }: Props) {
           </h1>
 
           <p className="max-w-md text-base leading-relaxed text-muted-warm sm:text-lg">
-            Waffle pops on a stick, thick shakes and little moments worth sharing, from
-            our counter on Radhanagar Road to your hands.
+            Demo waffle pops on a stick, thick shakes and sweet treats, from
+            our demo counter to your hands.
           </p>
 
           <div className="flex flex-wrap items-center gap-3.5">
@@ -108,7 +108,7 @@ export function HeroSection({ heroImage }: Props) {
             target="_blank"
             rel="noopener noreferrer"
             className="group inline-flex items-center gap-2.5 rounded-2xl border-2 border-ink/10 bg-white/70 px-4 py-2.5 transition-colors hover:border-ink/30"
-            aria-label={`Waffled Sreemangal is rated ${siteConfig.rating.value} out of 5 on Google Maps from ${siteConfig.rating.count} reviews. Open our Google Maps listing.`}
+            aria-label={`${siteConfig.name} is rated ${siteConfig.rating.value} out of 5 on ${siteConfig.rating.source} from ${siteConfig.rating.count} reviews.`}
           >
             <span className="flex items-center gap-0.5" aria-hidden>
               {[0, 1, 2, 3, 4].map((i) => (
@@ -117,7 +117,7 @@ export function HeroSection({ heroImage }: Props) {
             </span>
             <span className="text-sm font-bold text-ink">
               {siteConfig.rating.value}
-              <span className="font-medium text-muted-warm"> on Google</span>
+              <span className="font-medium text-muted-warm"> on {siteConfig.rating.source}</span>
             </span>
             <span className="rounded-full bg-lime px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-ink">
               {siteConfig.rating.count} reviews

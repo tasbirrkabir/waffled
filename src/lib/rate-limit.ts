@@ -20,12 +20,12 @@ type RateLimitOptions = {
 };
 
 const globalForRateLimit = globalThis as unknown as {
-  __waffledRateLimitBuckets?: Map<string, Bucket>;
+  __demoRateLimitBuckets?: Map<string, Bucket>;
 };
 
 const buckets: Map<string, Bucket> =
-  globalForRateLimit.__waffledRateLimitBuckets ?? new Map<string, Bucket>();
-globalForRateLimit.__waffledRateLimitBuckets = buckets;
+  globalForRateLimit.__demoRateLimitBuckets ?? new Map<string, Bucket>();
+globalForRateLimit.__demoRateLimitBuckets = buckets;
 
 /**
  * Best-effort client IP extraction from proxy headers.

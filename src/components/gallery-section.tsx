@@ -20,73 +20,73 @@ interface GalleryImage {
 const images: GalleryImage[] = [
   {
     src: "/images/gmaps/waffle-pops.webp",
-    alt: "Three chocolate-glazed waffle pops on sticks in purple boxes with marshmallows and drizzle",
-    caption: "Waffle pops, fresh from our Google listing",
+    alt: "Demo waffle pops on sticks served fresh in boxes",
+    caption: "Demo waffle pops ready to serve",
   },
   {
     src: "/images/gmaps/cherry-waffles.webp",
-    alt: "Two chocolate waffles topped with cherries and sauce in open Waffled takeout boxes",
-    caption: "Chocolate waffle with cherries, boxed up",
+    alt: "Demo chocolate waffles with berry toppings",
+    caption: "Demo waffles with sweet berry glaze",
   },
   {
     src: "/images/gmaps/exterior-night.webp",
-    alt: "Waffled Sreemangal shop exterior glowing at night",
-    caption: "The shop at night, from Google Maps",
+    alt: "Demo shop exterior glowing in the evening",
+    caption: "Demo cafe in the evening",
   },
   {
     src: "/images/gallery/mural-logo.webp",
-    alt: "Colourful pop-art mural with the WAFFLED logo and waffle mascot on the shop wall",
-    caption: "Our wall, WAFFLED love in full colour",
+    alt: "Demo pop-art wall mural and waffle mascot",
+    caption: "Demo wall art and colourful design",
   },
   {
     src: "/images/gmaps/choco-waffle-box.webp",
-    alt: "Chocolate waffle topped with whipped cream, chocolate chips and drizzle in a pink box",
-    caption: "Chocolate waffle, boxed and ready",
+    alt: "Demo chocolate waffle with whipped cream and sprinkles",
+    caption: "Demo waffle box, ready to go",
   },
   {
     src: "/images/gallery/interior-counter.webp",
-    alt: "Waffled shop interior with black counter, gold slat detailing and neon-bright murals",
-    caption: "The counter, black, gold and lots of colour",
+    alt: "Demo cafe interior with modern ordering counter",
+    caption: "Demo counter & cozy interior",
   },
   {
     src: "/images/gmaps/sign.webp",
-    alt: "Close-up of the circular WAFFLED sign",
-    caption: "The sign, from Google Maps",
+    alt: "Demo glowing circular shop sign",
+    caption: "Demo shop emblem",
   },
   {
     src: "/images/gallery/waffle-spread.webp",
-    alt: "Assorted waffle pop boxes held up showing different flavours",
-    caption: "The spread, pick your flavour",
+    alt: "Demo waffle platter showing assorted toppings",
+    caption: "Demo waffle platter & treats",
   },
   {
     src: "/images/gmaps/exterior-wide.webp",
-    alt: "Wide view of the colourful open-air Waffled shop with its sign",
-    caption: "The shop on Radhanagar Road, from Google Maps",
+    alt: "Demo cafe street view",
+    caption: "Demo shop on 123 Demo Street",
   },
   {
     src: "/images/gmaps/exterior-busy.webp",
-    alt: "Waffled shop busy at night with customers lined up under the glowing WAFFLE'D neon sign",
-    caption: "A busy night on Radhanagar Road",
+    alt: "Demo cafe evening atmosphere",
+    caption: "Demo cafe lively evening scene",
   },
   {
     src: "/images/gmaps/drink.webp",
-    alt: "Frothy shake or coffee in a paper cup on the counter",
-    caption: "Something sippable, from Google Maps",
+    alt: "Demo chilled drink and coffee",
+    caption: "Demo refreshing drinks",
   },
   {
     src: "/images/gallery/counter-order.webp",
-    alt: "Customer ordering at the Waffled counter beneath the menu board",
-    caption: "Order up at the counter",
+    alt: "Demo ordering counter display",
+    caption: "Demo friendly order service",
   },
   {
     src: "/images/gallery/menu-card.webp",
-    alt: "Printed Waffled menu card with waffle pop flavours and prices in taka",
-    caption: "The menu card, flavours and prices",
+    alt: "Demo printed menu display with flavours and prices",
+    caption: "Demo menu board and specials",
   },
   {
     src: "/images/gallery/ordering-experience.webp",
-    alt: "Inside Waffled Sreemangal with a customer at the ordering counter",
-    caption: "Radhanagar Road, Sreemangal",
+    alt: "Demo ordering experience at the cafe counter",
+    caption: "Demo cafe experience",
   },
 ];
 
@@ -115,8 +115,7 @@ export function GallerySection() {
             A closer look
           </h2>
           <p className="mt-4 text-base text-muted-warm sm:text-lg">
-            Real waffles, real shop. Photos straight from our Google Maps listing and
-            Radhanagar Road.
+            Demo waffles, demo cafe scenes, and dessert creations from 123 Demo Street.
           </p>
         </motion.div>
 
@@ -173,7 +172,7 @@ export function GallerySection() {
                   {selected.caption}
                 </DialogTitle>
                 <DialogDescription id="gallery-caption" className="mt-0.5 text-sm">
-                  Waffled Sreemangal, Radhanagar Road
+                  Demo Waffles Showcase, 123 Demo Street
                 </DialogDescription>
               </div>
               <button

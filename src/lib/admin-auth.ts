@@ -7,22 +7,22 @@ import { createHash, timingSafeEqual } from "crypto";
  * password change invalidates all existing sessions. Set ADMIN_PASSWORD in
  * .env to override the default.
  *
- * The token is accepted from BOTH the waffled_admin cookie (normal tabs) and
+ * The token is accepted from BOTH the demo_admin cookie (normal tabs) and
  * the x-admin-token header — browsers block SameSite cookies inside
  * cross-site iframes (e.g. the chat preview panel), so the client also keeps
  * the token in localStorage after login and replays it on every request.
  */
-export const ADMIN_COOKIE = "waffled_admin";
+export const ADMIN_COOKIE = "demo_admin";
 export const ADMIN_TOKEN_HEADER = "x-admin-token";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 12; // 12 hours
 
 export function adminPassword(): string {
-  return process.env.ADMIN_PASSWORD || "waffled-admin-2026";
+  return process.env.ADMIN_PASSWORD || "demo-admin-2026";
 }
 
 export function adminToken(): string {
   return createHash("sha256")
-    .update(`waffled::${adminPassword()}::v1`)
+    .update(`demo::${adminPassword()}::v1`)
     .digest("hex");
 }
 

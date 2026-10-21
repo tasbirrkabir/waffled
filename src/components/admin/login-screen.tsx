@@ -4,7 +4,7 @@
  * Admin login screen. Uses a plain fetch (not the api() wrapper) on purpose:
  * a 401 here means "wrong password", not "session expired".
  *
- * Dev hint (never rendered): test password is `waffled-admin-2026`,
+ * Dev hint (never rendered): test password is `demo-admin-2026`,
  * configurable via the ADMIN_PASSWORD env var.
  */
 
@@ -97,7 +97,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
           <span className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border-2 border-ink bg-cream shadow-[3px_3px_0_0_var(--color-ink)]">
             <Image
               src="/images/logo-176.webp"
-              alt="Waffled Sreemangal logo"
+              alt="Demo logo"
               width={80}
               height={80}
               priority
@@ -105,7 +105,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             />
           </span>
           <h1 className="mt-5 text-center font-display text-2xl font-bold tracking-tight">
-            WAFFLED <span className="text-pink">Admin</span>
+            DEMO <span className="text-pink">Admin</span>
           </h1>
           <p className="mt-1 text-center text-sm text-muted-warm">
             Sign in to manage the shop.
@@ -166,7 +166,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
           </form>
         </div>
         <p className="mt-4 text-center text-xs text-muted-warm">
-          Waffled Sreemangal · Admin panel
+          Demo Waffles · Admin panel
         </p>
       </motion.div>
     </div>

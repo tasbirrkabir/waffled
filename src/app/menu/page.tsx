@@ -9,8 +9,8 @@ import { getMenu } from "@/lib/menu-data";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Menu, Waffle Pops, Shakes & Prices",
-  description: `The full Waffled Sreemangal menu with prices: Basic Flavours Waffle from ৳159, Nutella waffles, thick shakes and add-ons. Synced with our Google Maps listing.`,
+  title: "Demo Menu | Waffle Pops, Shakes & Prices",
+  description: `The full Demo Waffles menu with prices: Classic Waffles from ৳159, Premium Waffles, thick shakes and add-ons.`,
   alternates: { canonical: "/menu" },
 };
 

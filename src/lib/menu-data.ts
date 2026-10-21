@@ -65,7 +65,7 @@ export async function getSignaturePicks(): Promise<SignaturePick[]> {
       description: p.signatureDescription || p.description,
       price: p.price,
       image: p.image,
-      alt: p.imageAlt || `${p.name} at Waffled Sreemangal`,
+      alt: p.imageAlt || `${p.name} at Demo Waffles`,
       tag: p.signatureTag || "Must try",
     }));
   } catch (err) {
@@ -80,23 +80,23 @@ export async function getHeroImage(): Promise<{ src: string; alt: string }> {
     const rows = await db.siteSetting.findMany({
       where: { key: { in: ["hero_image", "hero_image_alt"] } },
     });
-    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const map = new Map<string, string>(rows.map((r) => [r.key, r.value]));
     const src = map.get("hero_image");
     if (!src) {
       return {
         src: "/images/hero-waffle-gmaps.webp",
-        alt: "Chocolate-glazed waffle pops on sticks served in purple boxes at Waffled Sreemangal",
+        alt: "Demo waffle pops on sticks served fresh in boxes",
       };
     }
     return {
       src,
-      alt: map.get("hero_image_alt") || "Fresh waffle pops at Waffled Sreemangal",
+      alt: map.get("hero_image_alt") || "Fresh demo waffle pops at Demo Waffles",
     };
   } catch (err) {
     console.error("[menu-data] falling back to static hero image:", err);
     return {
       src: "/images/hero-waffle-gmaps.webp",
-      alt: "Chocolate-glazed waffle pops on sticks served in purple boxes at Waffled Sreemangal",
+      alt: "Demo waffle pops on sticks served fresh in boxes",
     };
   }
 }

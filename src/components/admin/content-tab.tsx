@@ -187,7 +187,7 @@ export function ContentTab() {
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border-2 border-ink/15 bg-cream">
               <Image
                 src={heroImage || DEFAULT_HERO}
-                alt={heroAlt || "Waffled Sreemangal hero photo"}
+                alt={heroAlt || "Demo Waffles hero photo"}
                 fill
                 sizes="(max-width: 640px) 100vw, 480px"
                 className="object-cover"

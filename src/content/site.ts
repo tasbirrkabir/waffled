@@ -1,54 +1,52 @@
 export const siteConfig = {
-  name: "Waffled",
-  legalName: "Waffled Sreemangal",
-  tagline: "Waffles, shakes & little moments worth sharing",
+  name: "Demo Waffles",
+  legalName: "Demo Waffles",
+  tagline: "Demo waffles, shakes & sweet moments worth sharing",
   description:
-    "Waffle pops, shakes and snacks in Sreemangal. Check the menu, opening hours and directions to our shop in Radhanagar, Sreemangal, Bangladesh.",
-  phoneDisplay: "+880 1723-399638",
-  phoneE164: "+8801723399638",
-  whatsappUrl: "https://wa.me/8801723399638",
-  email: "waffledshop.bd@gmail.com",
+    "Demo waffle pops, shakes and treats showcase. Explore the menu, opening hours and directions to our demo shop at 123 Demo Street.",
+  phoneDisplay: "+1 (555) 000-DEMO",
+  phoneE164: "+15550003366",
+  whatsappUrl: "https://wa.me/15550003366",
+  email: "demo@example.com",
   /**
-   * Numbers shown at checkout for "send money" payments.
-   * NOTE: owner should confirm dedicated bKash/Nagad merchant numbers;
-   * for now we use the shop's known contact number from Google Maps.
+   * Demo numbers shown at checkout for payments.
    */
   payments: {
-    bkashNumber: "01723-399638",
-    nagadNumber: "01723-399638",
+    bkashNumber: "01700-000000 (Demo)",
+    nagadNumber: "01700-000000 (Demo)",
   },
   address: {
-    street: "Radhanagar Road",
-    locality: "Sreemangal",
-    postalCode: "3210",
-    region: "Sylhet",
-    country: "Bangladesh",
-    countryCode: "BD",
-    landmark: "Near Grand Sultan Tea Resort & Golf Club, at the entrance of Radhanagar Road",
+    street: "123 Demo Street",
+    locality: "Demo District",
+    postalCode: "1000",
+    region: "Demo City",
+    country: "Demo Land",
+    countryCode: "DM",
+    landmark: "Near Demo Central Park, entrance of Demo Plaza",
   },
-  /** Rating straight from the shop's Google Maps listing */
+  /** Demo rating score */
   rating: {
-    value: "4.9",
-    count: 32,
-    source: "Google Maps",
+    value: "5.0",
+    count: 120,
+    source: "Demo Reviews",
   },
-  plusCode: "8Q27+4P Sreemangal, Bangladesh",
+  plusCode: "DEMO+123 Demo City",
   coordinates: {
-    lat: 24.3003415,
-    lng: 91.7642588,
+    lat: 40.7128,
+    lng: -74.006,
   },
   mapsUrl:
-    "https://www.google.com/maps?q=Waffled+Sreemangal,+Sreemangal+3210&ftid=0x375179000670e393:0xdc3b7b95a6ea6dc4",
+    "https://maps.google.com/?q=Demo+Waffles",
   mapsEmbedUrl:
-    "https://maps.google.com/maps?q=Waffled%20Sreemangal%2C%20Sreemangal%203210&t=&z=16&ie=UTF8&iwloc=&output=embed",
+    "https://maps.google.com/maps?q=Demo%20Store&t=&z=15&ie=UTF8&iwloc=&output=embed",
   reviewsUrl:
-    "https://www.google.com/maps/place/Waffled+Sreemangal/@24.3003415,91.7642588,17z/data=!4m6!3m5!1s0x375179000670e393:0xdc3b7b95a6ea6dc4!8m2!3d24.3003415!4d91.7642588!16s%2Fg%2F11yq3b_cg9",
+    "https://maps.google.com/?q=Demo+Waffles+Reviews",
   socials: {
-    facebook: "https://www.facebook.com/waffledshopbd/",
-    instagram: "https://www.instagram.com/waffled.bd/",
+    facebook: "https://www.facebook.com/demo",
+    instagram: "https://www.instagram.com/demo",
   },
   hours: {
-    note: "Hours may vary on holidays. Call ahead to confirm.",
+    note: "Demo store hours for demonstration purposes.",
     days: [
       { day: "Sunday", open: "12:00", close: "23:00", label: "12:00 PM to 11:00 PM" },
       { day: "Monday", open: "12:00", close: "23:30", label: "12:00 PM to 11:30 PM" },

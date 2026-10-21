@@ -3,7 +3,7 @@
 /**
  * Small shared UI pieces for the admin tabs: toolbar, empty/error states,
  * list skeletons. Styled utilitarian-cream (white cards, ink borders) with
- * the Waffled brand accents.
+ * the Demo brand accents.
  */
 
 import * as React from "react";

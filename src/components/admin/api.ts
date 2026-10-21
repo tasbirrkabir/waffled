@@ -25,7 +25,7 @@ export class UnauthorizedError extends Error {
 
 // --- localStorage session (iframe-safe) -------------------------------------
 
-const SESSION_KEY = "waffled_admin_session";
+const SESSION_KEY = "demo_admin_session";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // mirrors the cookie's 12h max-age
 
 interface StoredSession {

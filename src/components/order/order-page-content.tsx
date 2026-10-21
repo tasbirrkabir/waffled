@@ -537,7 +537,7 @@ export function OrderPageContent({ categories }: { categories: MenuCategory[] })
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     onBlur={() => setTouched((t) => ({ ...t, address: true }))}
-                    placeholder="House / flat, road, area, landmark. e.g. 12/3 College Road, opposite the bank, Sreemangal"
+                    placeholder="Building, street, area, landmark. e.g. 123 Demo Street, near Demo Park"
                     maxLength={200}
                     required
                     aria-invalid={touched.address && !addressValid}

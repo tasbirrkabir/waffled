@@ -16,7 +16,7 @@ const DEFAULT_HERO = {
 const DEFAULT_HERO_ALT = {
   key: "hero_image_alt",
   value:
-    "Chocolate-glazed waffle pops on sticks served in purple boxes at Waffled Sreemangal",
+    "Demo waffle pops on sticks served fresh in boxes",
 };
 
 async function main() {
@@ -72,10 +72,11 @@ async function main() {
   }
 
   for (const setting of [DEFAULT_HERO, DEFAULT_HERO_ALT]) {
-    const existing = await db.siteSetting.findUnique({ where: { key: setting.key } });
-    if (!existing) {
-      await db.siteSetting.create({ data: setting });
-    }
+    await db.siteSetting.upsert({
+      where: { key: setting.key },
+      create: setting,
+      update: { value: setting.value },
+    });
   }
 
   const categories = await db.category.count();

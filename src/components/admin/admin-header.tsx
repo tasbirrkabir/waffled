@@ -20,7 +20,7 @@ export function AdminHeader({
           <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)]">
             <Image
               src="/images/logo-176.webp"
-              alt="Waffled logo"
+              alt="Demo logo"
               width={36}
               height={36}
               className="h-full w-full object-contain p-0.5"
@@ -28,10 +28,10 @@ export function AdminHeader({
           </span>
           <span className="flex min-w-0 flex-col leading-none">
             <span className="font-display text-base font-bold tracking-tight">
-              WAFFLED <span className="text-pink">Admin</span>
+              DEMO <span className="text-pink">Admin</span>
             </span>
             <span className="hidden text-[0.55rem] font-semibold uppercase tracking-[0.28em] text-muted-warm sm:block">
-              Sreemangal · control room
+              Demo Store · control room
             </span>
           </span>
         </div>

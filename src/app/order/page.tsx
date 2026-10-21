@@ -8,9 +8,9 @@ import { getMenu } from "@/lib/menu-data";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Order Online, Pickup in Sreemangal",
+  title: "Order Online | Demo Waffles",
   description:
-    "Order waffle pops and shakes online from Waffled Sreemangal. Build your order, add your details, and send it to the shop on WhatsApp or by phone. Pay at pickup.",
+    "Order demo waffle pops and shakes online. Build your order, choose pickup or delivery, and test the checkout flow.",
   alternates: { canonical: "/order" },
 };
 

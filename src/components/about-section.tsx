@@ -23,7 +23,7 @@ const features = [
   {
     icon: MapPin,
     title: "Grab-and-go takeaway",
-    text: "Boxed and ready to wander with, right in the heart of Radhanagar.",
+    text: "Boxed and ready to wander with, right in the heart of Demo City.",
     color: "bg-lime-soft text-ink",
   },
 ];
@@ -46,7 +46,7 @@ export function AboutSection() {
             <div className="relative overflow-hidden rounded-[1.8rem] border-[3px] border-ink shadow-[8px_8px_0_0_var(--color-ink)]">
               <Image
                 src="/images/gallery/interior-counter.webp"
-                alt="Inside Waffled Sreemangal, black counter with gold detailing and colourful pop-art walls"
+                alt="Demo cafe interior with ordering counter and vibrant decor"
                 width={720}
                 height={1280}
                 sizes="(max-width: 1024px) 90vw, 45vw"
@@ -62,7 +62,7 @@ export function AboutSection() {
             >
               <Image
                 src="/images/gallery/mural-logo.webp"
-                alt="Waffled mascot mural with the WAFFLED logo on the shop wall"
+                alt="Demo waffle mascot mural and logo"
                 width={720}
                 height={1280}
                 sizes="176px"
@@ -71,7 +71,7 @@ export function AboutSection() {
             </motion.div>
             {/* sticker */}
             <div className="absolute -top-5 -left-3 rotate-[-8deg] rounded-full border-2 border-ink bg-purple px-4 py-2 font-display text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[3px_3px_0_0_var(--color-ink)] sm:-left-6">
-              Est. Sreemangal
+              Est. Demo Store
             </div>
           </motion.div>
 
@@ -90,13 +90,13 @@ export function AboutSection() {
               A little joy, served on a stick.
             </h2>
             <p className="text-base leading-relaxed text-muted-warm sm:text-lg">
-              Waffled started with a simple idea: bring proper street-style waffle
-              pops to Sreemangal. Every waffle is pressed fresh, dipped while
+              Demo started with a simple idea: bring delicious handcrafted waffle
+              pops to everyone. Every waffle is pressed fresh, dipped while
               it&apos;s still warm, and handed over in a box you can wander with.
             </p>
             <p className="text-base leading-relaxed text-muted-warm sm:text-lg">
-              Come find us on Radhanagar Road, next to the tea-country vibes
-              Sreemangal is famous for.
+              Visit our demo store at 123 Demo Street, designed for sweet treats
+              and memorable moments.
             </p>
 
             <ul className="w-full space-y-4">
@@ -137,7 +137,7 @@ export function AboutSection() {
                 className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-tr from-purple via-pink to-orange px-6 text-sm font-bold text-white shadow-[3px_3px_0_0_var(--color-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
               >
                 <Instagram className="h-4 w-4" aria-hidden />
-                Follow @waffled.bd
+                Follow @demo
               </a>
             </div>
           </motion.div>

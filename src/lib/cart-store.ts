@@ -56,7 +56,7 @@ export const useCart = create<CartState>()(
       clear: () => set({ lines: [] }),
     }),
     {
-      name: "waffled-cart",
+      name: "demo-cart",
       storage: createJSONStorage(() => localStorage),
     }
   )

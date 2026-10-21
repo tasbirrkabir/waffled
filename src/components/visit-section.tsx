@@ -183,7 +183,7 @@ export function VisitSection() {
             className="relative overflow-hidden rounded-[1.8rem] border-[3px] border-ink bg-surface shadow-[6px_6px_0_0_var(--color-ink)]"
           >
             <iframe
-              title="Map showing the location of Waffled Sreemangal"
+              title="Map showing the location of Demo Waffles"
               src={siteConfig.mapsEmbedUrl}
               className="h-[320px] w-full sm:h-[420px] lg:h-full lg:min-h-[480px]"
               loading="lazy"
@@ -196,8 +196,7 @@ export function VisitSection() {
                   <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
                 </span>
                 <p className="text-xs font-semibold leading-tight text-ink sm:text-sm">
-                  Near Grand Sultan, entrance of
-                  <br className="hidden sm:block" /> Radhanagar Road
+                  {siteConfig.address.landmark}
                 </p>
               </div>
               <a

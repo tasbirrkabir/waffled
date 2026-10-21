@@ -103,9 +103,9 @@ function MobileNavDrawer({
               />
             </span>
             <span className="flex flex-col leading-none">
-              <span className="font-display text-lg font-bold">WAFFLED</span>
+              <span className="font-display text-lg font-bold">DEMO</span>
               <span className="text-[0.55rem] font-semibold uppercase tracking-[0.28em] text-muted-warm">
-                Sreemangal
+                Waffles
               </span>
             </span>
           </div>
@@ -215,12 +215,12 @@ export function SiteHeader() {
         <Link
           href="/"
           className="flex items-center gap-2.5"
-          aria-label="Waffled Sreemangal, back to home"
+          aria-label="Demo Waffles, back to home"
         >
           <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)] md:h-11 md:w-11">
             <Image
               src="/images/logo-176.webp"
-              alt="Waffled logo, a bold W with a colourful splash pattern"
+              alt="Demo Waffles logo"
               fill
               sizes="44px"
               className="object-contain p-0.5"
@@ -229,10 +229,10 @@ export function SiteHeader() {
           </span>
           <span className="flex flex-col leading-none">
             <span className="font-display text-lg font-bold tracking-tight md:text-xl">
-              WAFFLED
+              DEMO
             </span>
             <span className="text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-muted-warm">
-              Sreemangal
+              Waffles
             </span>
           </span>
         </Link>

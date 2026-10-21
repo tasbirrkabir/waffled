@@ -88,21 +88,21 @@ export function SiteFooter() {
               <span className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border-2 border-cream/80 bg-cream">
                 <Image
                   src="/images/logo-176.webp"
-                  alt="Waffled logo"
+                  alt="Demo logo"
                   fill
                   sizes="48px"
                   className="object-contain p-1"
                 />
               </span>
               <div className="leading-none">
-                <p className="font-display text-xl font-bold">WAFFLED</p>
+                <p className="font-display text-xl font-bold">DEMO</p>
                 <p className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-cream/50">
-                  Sreemangal
+                  Waffles
                 </p>
               </div>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/60">
-              {siteConfig.tagline}. Find us on Radhanagar Road, Sreemangal.
+              {siteConfig.tagline}. Find us at {siteConfig.address.street}, {siteConfig.address.locality}.
             </p>
             <div className="mt-5 flex gap-3">
               <a
@@ -110,7 +110,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackEvent("social_click")}
-                aria-label="Waffled on Facebook"
+                aria-label="Demo on Facebook"
                 className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-cream/20 text-cream transition-colors hover:border-pink hover:bg-pink"
               >
                 <Facebook className="h-5 w-5" aria-hidden />
@@ -120,7 +120,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackEvent("social_click")}
-                aria-label="Waffled on Instagram"
+                aria-label="Demo on Instagram"
                 className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-cream/20 text-cream transition-colors hover:border-pink hover:bg-pink"
               >
                 <Instagram className="h-5 w-5" aria-hidden />
