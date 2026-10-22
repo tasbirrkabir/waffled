@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, Star } from "lucide-react";
+import { ArrowRight, Check, Heart, Star } from "lucide-react";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/track";
 import { Button } from "@/components/ui/button";
@@ -170,10 +170,10 @@ export function HeroSection({ heroImage }: Props) {
                 <path id="badge-circle" d="M 50,50 m -34,0 a 34,34 0 1,1 68,0 a 34,34 0 1,1 -68,0" />
               </defs>
               <text className="fill-cream font-display text-[10.5px] font-bold uppercase tracking-[0.24em]">
-                <textPath href="#badge-circle">waffle love ✦ waffle love ✦</textPath>
+                <textPath href="#badge-circle">waffle love • waffle love •</textPath>
               </text>
             </svg>
-            <Star className="h-6 w-6 fill-cream sm:h-7 sm:w-7" aria-hidden />
+            <Heart className="h-6 w-6 fill-cream text-cream sm:h-7 sm:w-7" aria-hidden />
           </div>
 
           {/* small polaroid card (desktop only: overlaps the hero image on small screens) */}

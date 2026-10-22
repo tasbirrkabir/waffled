@@ -10,7 +10,7 @@ import {
   X,
   ChevronDown,
   ArrowRight,
-  Sparkles,
+  BookOpen,
   Camera,
   HelpCircle,
   UtensilsCrossed,
@@ -36,7 +36,7 @@ const menuCategories = [
 ];
 
 const discoverLinks = [
-  { href: "/#story", label: "Our Story", icon: Sparkles },
+  { href: "/#story", label: "Our Story", icon: BookOpen },
   { href: "/#gallery", label: "Gallery", icon: Camera },
   { href: "/#visit", label: "Visit Us", icon: MapPin },
   { href: "/#faq", label: "FAQs", icon: HelpCircle },
@@ -296,7 +296,6 @@ export function SiteHeader() {
                   type="button"
                   className="group flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-semibold text-ink/90 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink whitespace-nowrap"
                 >
-                  <UtensilsCrossed className="h-4 w-4 text-orange" />
                   <span>Menu</span>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-warm transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </button>
@@ -313,12 +312,12 @@ export function SiteHeader() {
                   <DropdownMenuItem
                     key={cat.href}
                     asChild
-                    className="rounded-xl px-2.5 py-2 text-sm font-medium hover:bg-white focus:bg-white cursor-pointer"
+                    className="rounded-xl px-2.5 py-2 text-sm font-semibold text-ink data-[highlighted]:bg-white data-[highlighted]:text-ink focus:bg-white focus:text-ink hover:bg-white hover:text-ink cursor-pointer transition-colors shadow-none data-[highlighted]:shadow-[2px_2px_0_0_var(--color-ink)]"
                   >
-                    <Link href={cat.href} className="flex items-center justify-between w-full">
-                      <span className="flex items-center gap-2">
+                    <Link href={cat.href} className="flex items-center justify-between w-full text-ink">
+                      <span className="flex items-center gap-2 text-ink">
                         <span>{cat.emoji}</span>
-                        <span>{cat.label}</span>
+                        <span className="text-ink font-semibold">{cat.label}</span>
                       </span>
                       <span className="text-xs font-bold text-pink">{cat.count}</span>
                     </Link>
@@ -327,7 +326,7 @@ export function SiteHeader() {
                 <DropdownMenuSeparator className="my-1 bg-ink/10" />
                 <DropdownMenuItem
                   asChild
-                  className="rounded-xl bg-orange/10 px-2.5 py-2 text-sm font-semibold text-orange hover:bg-orange hover:text-white focus:bg-orange focus:text-white cursor-pointer"
+                  className="rounded-xl bg-orange/10 px-2.5 py-2 text-sm font-semibold text-orange data-[highlighted]:bg-orange data-[highlighted]:text-white hover:bg-orange hover:text-white focus:bg-orange focus:text-white cursor-pointer"
                 >
                   <Link href="/menu" className="flex items-center justify-between w-full">
                     <span>View Full Menu</span>
@@ -344,7 +343,6 @@ export function SiteHeader() {
                   type="button"
                   className="group flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-semibold text-ink/90 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink whitespace-nowrap"
                 >
-                  <Sparkles className="h-4 w-4 text-pink" />
                   <span>Discover</span>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-warm transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </button>
@@ -360,11 +358,11 @@ export function SiteHeader() {
                     <DropdownMenuItem
                       key={link.href}
                       asChild
-                      className="rounded-xl px-2.5 py-2 text-sm font-medium hover:bg-white focus:bg-white cursor-pointer"
+                      className="rounded-xl px-2.5 py-2 text-sm font-semibold text-ink data-[highlighted]:bg-white data-[highlighted]:text-ink focus:bg-white focus:text-ink hover:bg-white hover:text-ink cursor-pointer transition-colors shadow-none data-[highlighted]:shadow-[2px_2px_0_0_var(--color-ink)]"
                     >
-                      <Link href={link.href} className="flex items-center gap-2 w-full">
-                        <Icon className="h-4 w-4 text-pink" />
-                        <span>{link.label}</span>
+                      <Link href={link.href} className="flex items-center gap-2.5 w-full text-ink">
+                        <Icon className="h-4 w-4 text-pink shrink-0" />
+                        <span className="text-ink font-semibold">{link.label}</span>
                       </Link>
                     </DropdownMenuItem>
                   );
