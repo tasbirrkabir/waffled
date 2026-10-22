@@ -3,18 +3,43 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, Phone, MapPin, X } from "lucide-react";
+import {
+  Menu,
+  Phone,
+  MapPin,
+  X,
+  ChevronDown,
+  ArrowRight,
+  Sparkles,
+  Camera,
+  HelpCircle,
+  UtensilsCrossed,
+} from "lucide-react";
 import { siteConfig, isOpenNow } from "@/content/site";
 import { trackEvent } from "@/lib/track";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { href: "/menu", label: "Menu" },
-  { href: "/order", label: "Order Online" },
-  { href: "/#story", label: "Our Story" },
-  { href: "/#gallery", label: "Gallery" },
-  { href: "/#visit", label: "Visit Us" },
+const menuCategories = [
+  { href: "/menu#classic", label: "Classic Waffles", count: "10", emoji: "🧇" },
+  { href: "/menu#premium", label: "Premium Waffles", count: "5", emoji: "✨" },
+  { href: "/menu#shakes", label: "Thick Shakes", count: "5", emoji: "🥤" },
+  { href: "/menu#drinks", label: "Drinks & Add-ons", count: "7", emoji: "☕" },
+];
+
+const discoverLinks = [
+  { href: "/#story", label: "Our Story", icon: Sparkles },
+  { href: "/#gallery", label: "Gallery", icon: Camera },
+  { href: "/#visit", label: "Visit Us", icon: MapPin },
+  { href: "/#faq", label: "FAQs", icon: HelpCircle },
 ];
 
 function MobileNavButton({
@@ -30,19 +55,13 @@ function MobileNavButton({
       aria-expanded={open}
       aria-controls="mobile-nav-panel"
       onClick={onClick}
-      className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-ink text-cream shadow-[2px_2px_0_0_rgba(32,23,25,0.25)]"
+      className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-ink text-cream shadow-[2px_2px_0_0_rgba(32,23,25,0.25)] transition-transform active:scale-95"
     >
       <Menu className="h-5 w-5" aria-hidden />
     </button>
   );
 }
 
-/**
- * Overlay renders as a SIBLING of <header>, never inside it. Keeping the
- * drawer outside the header avoids any fixed-inside-fixed containing block
- * issues and lets it cover the full viewport height when the page is
- * scrolled.
- */
 function MobileNavDrawer({
   open,
   onClose,
@@ -93,7 +112,7 @@ function MobileNavDrawer({
       >
         <div className="flex items-center justify-between border-b-2 border-ink/10 p-5">
           <div className="flex items-center gap-2.5">
-            <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white">
+            <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)]">
               <Image
                 src="/images/logo-176.webp"
                 alt=""
@@ -102,11 +121,8 @@ function MobileNavDrawer({
                 className="object-contain p-0.5"
               />
             </span>
-            <span className="flex flex-col leading-none">
-              <span className="font-display text-lg font-bold">DEMO</span>
-              <span className="text-[0.55rem] font-semibold uppercase tracking-[0.28em] text-muted-warm">
-                Waffles
-              </span>
+            <span className="font-display text-lg font-bold tracking-tight text-ink">
+              DEMO <span className="text-pink">WAFFLES</span>
             </span>
           </div>
           <button
@@ -119,20 +135,62 @@ function MobileNavDrawer({
           </button>
         </div>
 
-        <nav aria-label="Mobile" className="flex flex-col gap-1 overflow-y-auto p-5">
-          {navLinks.map((link, i) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={onClose}
-              className="flex items-center justify-between rounded-2xl px-4 py-3.5 font-display text-xl font-semibold text-ink transition-colors hover:bg-white"
-            >
-              {link.label}
-              <span className="text-xs font-bold text-pink" aria-hidden>
-                0{i + 1}
-              </span>
-            </Link>
-          ))}
+        <nav aria-label="Mobile" className="flex flex-col gap-4 overflow-y-auto p-5">
+          {/* Menu Categories */}
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-warm">
+              Menu Categories
+            </p>
+            <div className="space-y-1">
+              {menuCategories.map((cat) => (
+                <Link
+                  key={cat.href}
+                  href={cat.href}
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-xl px-3.5 py-2.5 text-base font-semibold text-ink transition-colors hover:bg-white"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{cat.emoji}</span>
+                    <span>{cat.label}</span>
+                  </span>
+                  <span className="rounded-full bg-cream-soft px-2 py-0.5 text-xs font-bold text-pink">
+                    {cat.count}
+                  </span>
+                </Link>
+              ))}
+              <Link
+                href="/menu"
+                onClick={onClose}
+                className="flex items-center justify-between rounded-xl bg-orange/10 px-3.5 py-2.5 text-sm font-bold text-orange hover:bg-orange hover:text-white"
+              >
+                <span>Full Menu</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Discover Section */}
+          <div className="border-t border-ink/10 pt-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-warm">
+              Discover
+            </p>
+            <div className="space-y-1">
+              {discoverLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={onClose}
+                    className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-base font-medium text-ink transition-colors hover:bg-white"
+                  >
+                    <Icon className="h-4 w-4 text-pink" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </nav>
 
         <div className="mt-auto space-y-2.5 border-t-2 border-ink/10 p-5">
@@ -165,10 +223,6 @@ function MobileNavDrawer({
               Get Directions
             </a>
           </Button>
-          <p className="pt-1 text-center text-xs text-muted-warm">
-            {siteConfig.address.street}, {siteConfig.address.locality}{" "}
-            {siteConfig.address.postalCode}
-          </p>
         </div>
       </div>
     </>
@@ -196,116 +250,192 @@ export function SiteHeader() {
 
   return (
     <>
-    <header
-      className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-        scrolled
-          ? "bg-cream shadow-[0_1px_0_0_var(--color-border-warm)]"
-          : "bg-transparent"
-      )}
-    >
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:text-cream"
+      <header
+        className={cn(
+          "fixed inset-x-0 top-0 z-50 transition-all duration-300",
+          scrolled
+            ? "bg-cream shadow-[0_1px_0_0_var(--color-border-warm)]"
+            : "bg-transparent"
+        )}
       >
-        Skip to content
-      </a>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 md:h-[4.5rem]">
-        {/* Brand */}
-        <Link
-          href="/"
-          className="flex items-center gap-2.5"
-          aria-label="Demo Waffles, back to home"
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:text-cream"
         >
-          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)] md:h-11 md:w-11">
-            <Image
-              src="/images/logo-176.webp"
-              alt="Demo Waffles logo"
-              fill
-              sizes="44px"
-              className="object-contain p-0.5"
-              priority
-            />
-          </span>
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-lg font-bold tracking-tight md:text-xl">
-              DEMO
-            </span>
-            <span className="text-[0.6rem] font-semibold uppercase tracking-[0.28em] text-muted-warm">
-              Waffles
-            </span>
-          </span>
-        </Link>
-
-        {/* Desktop nav */}
-        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-ink/80 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Desktop actions */}
-        <div className="hidden items-center gap-2.5 lg:flex">
-          {openStatus && (
-            <span
-              className={cn(
-                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold",
-                openStatus.open
-                  ? "border-lime bg-lime-soft text-ink"
-                  : "border-border-warm bg-white text-muted-warm"
-              )}
-            >
-              <span
-                className={cn(
-                  "h-2 w-2 rounded-full",
-                  openStatus.open ? "bg-emerald-500" : "bg-muted-warm/50"
-                )}
-                aria-hidden
+          Skip to content
+        </a>
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 md:h-[4.5rem]">
+          {/* Brand */}
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 shrink-0"
+            aria-label="Demo Waffles, back to home"
+          >
+            <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-ink bg-white shadow-[2px_2px_0_0_var(--color-ink)] md:h-11 md:w-11">
+              <Image
+                src="/images/logo-176.webp"
+                alt="Demo Waffles logo"
+                fill
+                sizes="44px"
+                className="object-contain p-0.5"
+                priority
               />
-              {openStatus.label}
             </span>
-          )}
-          <a
-            href={`tel:${siteConfig.phoneE164}`}
-            onClick={() => trackEvent("phone_click")}
-            className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-ink transition-colors hover:text-pink"
-          >
-            <Phone className="h-4 w-4" aria-hidden />
-            {siteConfig.phoneDisplay}
-          </a>
-          <Button
-            asChild
-            className="min-h-11 rounded-full bg-orange px-5 font-semibold text-white shadow-[3px_3px_0_0_var(--color-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
-          >
-            <Link href="/order" onClick={() => trackEvent("menu_click")}>
+            <span className="flex items-baseline gap-1 font-display text-lg font-bold tracking-tight text-ink md:text-xl whitespace-nowrap">
+              <span>DEMO</span>
+              <span className="text-pink">WAFFLES</span>
+            </span>
+          </Link>
+
+          {/* Desktop / Tablet Nav (Dropdown Type) */}
+          <nav aria-label="Primary" className="hidden items-center gap-1.5 md:flex">
+            {/* Menu Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="group flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-semibold text-ink/90 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink whitespace-nowrap"
+                >
+                  <UtensilsCrossed className="h-4 w-4 text-orange" />
+                  <span>Menu</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-warm transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                sideOffset={8}
+                className="w-56 rounded-2xl border-2 border-ink bg-cream p-1.5 shadow-[4px_4px_0_0_var(--color-ink)]"
+              >
+                <DropdownMenuLabel className="px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-muted-warm">
+                  Categories
+                </DropdownMenuLabel>
+                {menuCategories.map((cat) => (
+                  <DropdownMenuItem
+                    key={cat.href}
+                    asChild
+                    className="rounded-xl px-2.5 py-2 text-sm font-medium hover:bg-white focus:bg-white cursor-pointer"
+                  >
+                    <Link href={cat.href} className="flex items-center justify-between w-full">
+                      <span className="flex items-center gap-2">
+                        <span>{cat.emoji}</span>
+                        <span>{cat.label}</span>
+                      </span>
+                      <span className="text-xs font-bold text-pink">{cat.count}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator className="my-1 bg-ink/10" />
+                <DropdownMenuItem
+                  asChild
+                  className="rounded-xl bg-orange/10 px-2.5 py-2 text-sm font-semibold text-orange hover:bg-orange hover:text-white focus:bg-orange focus:text-white cursor-pointer"
+                >
+                  <Link href="/menu" className="flex items-center justify-between w-full">
+                    <span>View Full Menu</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Discover Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="group flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-semibold text-ink/90 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink whitespace-nowrap"
+                >
+                  <Sparkles className="h-4 w-4 text-pink" />
+                  <span>Discover</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-warm transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                sideOffset={8}
+                className="w-48 rounded-2xl border-2 border-ink bg-cream p-1.5 shadow-[4px_4px_0_0_var(--color-ink)]"
+              >
+                {discoverLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={link.href}
+                      asChild
+                      className="rounded-xl px-2.5 py-2 text-sm font-medium hover:bg-white focus:bg-white cursor-pointer"
+                    >
+                      <Link href={link.href} className="flex items-center gap-2 w-full">
+                        <Icon className="h-4 w-4 text-pink" />
+                        <span>{link.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Direct Order Online Link */}
+            <Link
+              href="/order"
+              className="rounded-full px-3.5 py-2 text-sm font-semibold text-ink/80 transition-colors hover:bg-white hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink whitespace-nowrap"
+            >
               Order Online
             </Link>
-          </Button>
-        </div>
+          </nav>
 
-        {/* Mobile actions */}
-        <div className="flex items-center gap-2 lg:hidden">
-          <a
-            href={`tel:${siteConfig.phoneE164}`}
-            onClick={() => trackEvent("phone_click")}
-            aria-label={`Call ${siteConfig.phoneDisplay}`}
-            className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-white text-ink shadow-[2px_2px_0_0_var(--color-ink)]"
-          >
-            <Phone className="h-5 w-5" aria-hidden />
-          </a>
-          <MobileNavButton open={navOpen} onClick={() => setNavOpen(true)} />
+          {/* Desktop actions */}
+          <div className="hidden items-center gap-2.5 md:flex">
+            {openStatus && (
+              <span
+                className={cn(
+                  "hidden xl:flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap",
+                  openStatus.open
+                    ? "border-lime bg-lime-soft text-ink"
+                    : "border-border-warm bg-white text-muted-warm"
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full",
+                    openStatus.open ? "bg-emerald-500" : "bg-muted-warm/50"
+                  )}
+                  aria-hidden
+                />
+                {openStatus.label}
+              </span>
+            )}
+            <a
+              href={`tel:${siteConfig.phoneE164}`}
+              onClick={() => trackEvent("phone_click")}
+              className="hidden xl:flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-ink transition-colors hover:text-pink whitespace-nowrap"
+            >
+              <Phone className="h-4 w-4" aria-hidden />
+              {siteConfig.phoneDisplay}
+            </a>
+            <Button
+              asChild
+              className="min-h-11 rounded-full bg-orange px-5 font-semibold text-white shadow-[3px_3px_0_0_var(--color-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none whitespace-nowrap shrink-0"
+            >
+              <Link href="/order" onClick={() => trackEvent("menu_click")}>
+                Order Online
+              </Link>
+            </Button>
+          </div>
+
+          {/* Mobile actions */}
+          <div className="flex items-center gap-2 md:hidden">
+            <a
+              href={`tel:${siteConfig.phoneE164}`}
+              onClick={() => trackEvent("phone_click")}
+              aria-label={`Call ${siteConfig.phoneDisplay}`}
+              className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-white text-ink shadow-[2px_2px_0_0_var(--color-ink)]"
+            >
+              <Phone className="h-5 w-5" aria-hidden />
+            </a>
+            <MobileNavButton open={navOpen} onClick={() => setNavOpen(true)} />
+          </div>
         </div>
-      </div>
-    </header>
-    {/* Drawer overlay lives OUTSIDE <header> so it always spans the full
-        viewport, independent of the fixed header. */}
-    <MobileNavDrawer open={navOpen} onClose={() => setNavOpen(false)} />
+      </header>
+      {/* Drawer overlay */}
+      <MobileNavDrawer open={navOpen} onClose={() => setNavOpen(false)} />
     </>
   );
 }
